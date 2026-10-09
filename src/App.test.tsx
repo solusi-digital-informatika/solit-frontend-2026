@@ -5,7 +5,7 @@ import { ApiClientError, type ApiClient } from './lib/api/client'
 import { healthFixture } from './mocks/fixtures'
 
 function testClient(health: ApiClient['health']): ApiClient {
-  return { health, request: vi.fn() }
+  return { health, request: vi.fn().mockResolvedValue({ data: [], page: { limit: 25, nextCursor: null } }) }
 }
 describe('boot handshake', () => {
   it('shows loading until the validated health response arrives', async () => {

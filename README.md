@@ -23,8 +23,9 @@ VITE_USE_MOCK_API=true
 ```
 
 Mock mode uses MSW to intercept HTTP requests before React starts. The page labels
-mock mode explicitly. The current mock endpoint is GET /health; feature handlers
-and section 9 project fixtures will be added with their corresponding features.
+mock mode explicitly. Mock endpoints include GET /health, GET/POST /projects,
+and GET /projects/:id. Solara uses the canonical seed IDs. Creation offers blank
+projects; full demo cloning arrives with the associated domain fixtures.
 Unimplemented API calls in mock mode fail rather than reach a real backend.
 The service worker is checked in at public/mockServiceWorker.js.
 
@@ -59,9 +60,11 @@ unknown response fields, and the boot compatibility gate.
 
 ## Current scope
 
-Integration foundation and the initial compatibility screen are implemented.
-The product screens, project fixtures, persistence, assessment workflow, and
-real backend integration are not implemented yet. Browser visual checks and
+Integration foundation, project list/search/status filters/sorting, blank-project
+creation, and detail navigation are implemented. Mock writes survive navigation
+and reset on reload. Creation reuses its intent key on retry and prevents duplicate
+submissions. The overview dashboard, other screens, persistence, assessment
+workflow, and real backend integration are not implemented yet. Browser visual checks and
 the full product E2E scenario are scheduled with subsequent features.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.

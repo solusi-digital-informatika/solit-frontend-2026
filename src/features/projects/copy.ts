@@ -1,0 +1,16 @@
+export const projectCopy = {
+  heading: 'Projects', intro: 'Keep each creative campaign and its production history together.',
+  create: 'Create project', name: 'Project name', description: 'Description',
+  blank: 'Creates a blank project. To explore the seeded campaign, open Solara below.',
+  cancel: 'Cancel', saving: 'Creating…', search: 'Search projects', status: 'Project status',
+  all: 'All statuses', active: 'Active', archived: 'Archived', unknown: 'Unknown status',
+  sort: 'Sort projects', recent: 'Recently updated', alphabetical: 'Name A–Z',
+  loading: 'Loading projects…', empty: 'No projects available. Create a project or change the filters.',
+  noResults: 'No projects match these filters.', retry: 'Try again', loadMore: 'Load more projects',
+  open: 'Open project', back: 'All projects', owner: 'Owner', role: 'Your role', updated: 'Updated',
+  noDescription: 'No description provided.', selected: 'Project opened',
+  next: 'The project overview, assets, and direction tools will be added in the next features.',
+  mock: 'Mock API · Changes last until this page is reloaded.', offline: 'You are offline. Reconnect to access the backend.',
+  nameError: 'Enter a project name between 1 and 160 characters.', requestId: 'Request ID',
+  created: 'Project created.', loadingProject: 'Loading project…', unknownRole: 'Unknown role',
+} as const

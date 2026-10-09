@@ -2,6 +2,7 @@
 import { ApiClientError, assertCompatibleContract, type ApiClient } from './lib/api/client'
 import { copy } from './copy/en'
 import './App.css'
+import { Projects } from './features/projects/Projects'
 
 type Connection = { kind: 'loading' } | { kind: 'ready'; contractVersion: string } | { kind: 'error'; error: ApiClientError }
 
@@ -36,8 +37,8 @@ function App({ client, isMockApi }: { client: ApiClient; isMockApi: boolean }) {
       {connection.kind === 'ready' && <section aria-label="API connection" className="connection" role="status">
         <p className="setup-status">{copy.connected}</p>
         <p>Contract v{connection.contractVersion}</p>
-        <p className="note">{copy.note}</p>
       </section>}
+      {connection.kind === 'ready' && <Projects client={client} isMockApi={isMockApi} />}
       {connection.kind === 'error' && <section role="alert" className="connection error">
         <h2>{copy.failed}</h2>
         <p>{connection.error.message}</p>
