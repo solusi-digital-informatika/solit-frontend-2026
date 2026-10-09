@@ -69,6 +69,9 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
     }),
   ]
   return { handlers, events,
+    version: (id: string) => versionStore.all().find(value => value.id === id),
+    latestVersions: (projectId: string) => versionStore.all().filter(version => version.isLatest && records.some(record => record.asset.id === version.assetId && record.asset.projectId === projectId && !record.asset.archivedAt)).map(version => ({ version, asset: records.find(record => record.asset.id === version.assetId)!.asset })),
+    asset: (id: string) => records.find(record => record.asset.id === id)?.asset,
     projectFor(type: string, id: string) { return records.find(value => type === 'ASSET' ? value.asset.id === id : value.versions.some(version => version.id === id))?.asset.projectId },
     counts(projectId: string) { const values = records.map(value => value.asset).filter(asset => asset.projectId === projectId); return { total: values.length, byStatus: Object.fromEntries(AssetStatusSchema.options.map(status => [status, values.filter(asset => asset.status === status).length])) } },
   }

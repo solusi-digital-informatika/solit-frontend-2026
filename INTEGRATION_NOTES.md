@@ -57,17 +57,28 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Schema exports use the documented type name plus Schema (e.g. ProjectSchema) and inferred type Project.
 - API requests time out after 15 seconds unless overridden; mutations are never automatically retried.
 
+## Feature #9 — Impact Assessment & Impact Map
+
+- Routes: #/projects/:projectId/impact and /impact/:assessmentId. Result links open #/projects/:projectId/assets/:assetId/versions/:versionId, including historical versions; detail reads reject records belonging to another project/asset.
+- Start/list/detail/retry/cancel use section 6.8 endpoints. Starts use a stable idempotency key for an unchanged body; changed input allocates a new key. Default old direction, latest brief and latest versions of non-archived assets resolve in the mock at request time. Explicit scopes support historical version IDs and deduplicate repeated IDs. Confirmed assessments retain their original exact version references and direction diff after later asset changes.
+- Impact Map displays API priority order, qualitative uncertainty, rationale, supporting/conflicting evidence, missing information, suggested actions, original/effective recommendation, resolution, counts and the required human-decision disclaimer. It never computes recommendations, priorities or counts. Detail filters affect returned items while full counts remain unchanged. Known editing roles can start/retry/cancel; VIEWER and unknown roles are read-only, with backend authorization still required.
+- GET polling begins at 1.5 seconds, increases by 1.5 to a 5-second maximum, stops at terminal states/read errors, and stops automatically after 120 seconds with manual refresh/cancel guidance. Cleanup aborts reads and clears timers. POST is never used for polling or retried automatically. AI_NOT_CONFIGURED preserves the draft and offers an explicit new rules-only intent.
+- The mock completes inline, providerName=mock, isSimulated=true, rulesVersion=rules-v1, imagesSent=0. AI_ASSISTED/HYBRID remain deterministic simulated metadata outcomes; no real AI call, image inference or confidence percentage is produced. The form sends includeImages=false. Real provider lifecycle, authorization and persistence still require backend verification; pending/running/failed/retry/cancel UI is checked using controlled API responses.
+- Exact Solara Cold Industrial …0031 → Warm Organic …0041 with brief …0020 returns Factory …0063 REVIEW_REQUIRED/HIGH priority 1, Metal …0064 RECREATE_CANDIDATE/LOW priority 2, Closeup …0062 ADAPT_CANDIDATE/MEDIUM priority 3, Hero …0061 REUSE_CANDIDATE/MEDIUM priority 4. Other version/direction/brief combinations return REVIEW_REQUIRED/HIGH with an explicit uncalibrated-scope explanation. This mock fixture does not implement a general rules engine. Reuse at medium uncertainty does not set requiresHumanReview; other demo outcomes do.
+- Seed recordedAttributes now contain authored fictional metadata sufficient for that documented scenario. They are explicitly described as demo attributes rather than extracted observations. Factory lighting/mood remain missing. Existing provider/prompt fields remain null and procedural demo files remain unchanged.
+- Project Home latestAssessment and unresolvedRecommendationCount are server-owned mock projections. The latter sums unresolved items across completed runs, preserving distinct historical recommendations. Human decisions/overrides and their effect on these projections are feature #10; assessment runs do not activate direction, change version status/content or move approved collection pins.
+
 ## Proposed contract changes
 
 - None.
 
 ## Known gaps
 
-- Product screens, seeded project fixtures, mutation handlers, and feature-specific tests are scheduled for subsequent features.
-- Project unknown-enum handling is implemented; other feature status components will add equivalent handling before shipping.
+- Human decisions/overrides, collections and activity feed remain subsequent feature slices.
+- Implemented feature views retain text fallbacks for unknown status/recommendation values.
 - Backend integration has not been exercised; current verification uses MSW.
 
 ## Verification
 
-Run npm run test, npm run lint, npm run typecheck, npm run build, and npm run test:e2e.
+Run npm run test -- --maxWorkers=2, npm run lint, npm run typecheck, npm run build, and npm run test:e2e -- --workers=2 sequentially on resource-constrained machines.
 Browser smoke tests use installed Microsoft Edge (Playwright channel msedge) at desktop and phone widths. Install Edge or adjust the test channel if it is unavailable on another machine.

@@ -14,7 +14,7 @@ test('compares versions and creates a derived version while preserving the appro
   await form.getByLabel('Revision rationale').fill('Refine hero for warm organic campaign')
   await form.getByLabel('Direction revision').selectOption('00000000-0000-4000-8000-000000000041')
   await form.getByLabel('Prompt', { exact: true }).fill('Soft natural light and warm material accents')
-  await form.getByLabel('Mood', { exact: true }).fill('calm\ncrafted')
+  await form.getByRole('textbox', { name: 'Mood', exact: true }).fill('calm\ncrafted')
   await form.getByLabel('File source').selectOption('external')
   await form.getByLabel('File URL', { exact: true }).fill('/demo-assets/hero-v2.jpg')
   await form.getByLabel('MIME type').fill('image/jpeg')

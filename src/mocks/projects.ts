@@ -7,6 +7,8 @@ import { createBriefStore } from './briefs'
 import { createDirectionStore } from './directions'
 import { createReferenceStore } from './references'
 import { createAssetStore } from './assets'
+import { createAssessmentStore } from './assessments'
+import { assessmentDiff } from './assessmentDiff'
 
 const inputSchema = z.object({ name: z.string().trim().min(1).max(160), description: z.string().trim().optional(), template: z.enum(['BLANK', 'DEMO_SOLARA']) })
 export function createProjectHandlers(baseUrl: string) {
@@ -16,6 +18,7 @@ export function createProjectHandlers(baseUrl: string) {
   const briefStore = createBriefStore(baseUrl, id => projects.find(project => project.id === id))
   const assetStore = createAssetStore(baseUrl, id => projects.find(project => project.id === id), id => referenceStore.linksToAsset(id), { directionProject: id => directionStore.revisionProject(id), directionFor: id => directionStore.revisionDirection(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), referenceProject: id => referenceStore.projectFor(id) })
   const referenceStore = createReferenceStore(baseUrl, id => projects.find(project => project.id === id), id => directionStore.revisionProject(id), (type, id) => assetStore.projectFor(type, id))
+  const assessmentStore = createAssessmentStore(baseUrl, id => projects.find(project => project.id === id), { directionProject: id => directionStore.revisionProject(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), version: id => assetStore.version(id), asset: id => assetStore.asset(id), latestVersions: id => assetStore.latestVersions(id), diff: (from, to) => assessmentDiff(from ? directionStore.revision(from) : undefined, directionStore.revision(to)!) })
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'IDEMPOTENCY_KEY_REUSED', message: string, details: { path: string; message: string }[] = []) {
     const requestId = request.headers.get('X-Request-Id') ?? crypto.randomUUID()
     return HttpResponse.json(ApiErrorSchema.parse({ error: { code, message, requestId, details } }), { status, headers: { 'X-Request-Id': requestId } })
@@ -26,11 +29,13 @@ export function createProjectHandlers(baseUrl: string) {
     ...referenceStore.handlers,
     ...directionStore.handlers,
     ...briefStore.handlers,
+    ...assessmentStore.handlers,
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)
       if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
-      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: { ...summaryForProject(project), assetCounts: assetStore.counts(project.id), activeDirection: directionStore.activeContext(project), recentDecisions: directionStore.recentDecisions(project.id) } }), { headers: headers(request) })
+      const latest = assessmentStore.latest(project.id)
+      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: { ...summaryForProject(project), unresolvedRecommendationCount: assessmentStore.unresolved(project.id), latestAssessment: latest ? { id: latest.id, status: latest.status, startedAt: latest.startedAt, isSimulated: latest.isSimulated } : null, assetCounts: assetStore.counts(project.id), activeDirection: directionStore.activeContext(project), recentDecisions: directionStore.recentDecisions(project.id) } }), { headers: headers(request) })
     }),
     http.get(`${baseUrl}/projects`, ({ request }) => {
       const query = new URL(request.url).searchParams

@@ -5,8 +5,18 @@ import { AssetVersionSchema, AssetVersionSummarySchema, AssetVersionInputSchema,
 export interface VersionContext { directionProject: (id: string) => string | undefined; directionFor: (id: string) => string | undefined; briefProject: (id: string) => string | undefined; latestBrief: (projectId: string) => string | null; referenceProject: (id: string) => string | undefined }
 export type AssetRecord = { asset: Asset; versions: AssetVersionSummary[] }
 export const emptyAttributes = () => RecordedAttributesSchema.parse({ palette: [], lighting: [], composition: [], materials: [], mood: [], typography: [], subject: [] })
+// Authored fictional metadata for the documented demo scenario; no image analysis.
+function demoAttributes(id: string) {
+  const data: Record<string, Partial<ReturnType<typeof emptyAttributes>>> = {
+    '00000000-0000-4000-8000-000000000061': { palette: ['neutral'], lighting: ['soft', 'natural'], materials: ['wood'], composition: ['centered product', 'negative space'], mood: ['calm', 'crafted'] },
+    '00000000-0000-4000-8000-000000000062': { palette: ['cool'], lighting: ['hard', 'cool'], composition: ['material detail'], materials: ['wood'], mood: ['calm'] },
+    '00000000-0000-4000-8000-000000000063': { palette: ['cool'], composition: ['factory context'], materials: ['metal'] },
+    '00000000-0000-4000-8000-000000000064': { palette: ['cool'], lighting: ['hard', 'cool'], materials: ['metal', 'polished'] },
+  }
+  return RecordedAttributesSchema.parse({ ...emptyAttributes(), ...data[id] })
+}
 export function createVersionStore(baseUrl: string, records: AssetRecord[], findProject: (id: string) => Project | undefined, context: VersionContext) {
-  const versions: AssetVersion[] = records.flatMap(record => record.versions.map(summary => AssetVersionSchema.parse({ ...summary, assetTitle: record.asset.title, derivedFromVersionId: summary.id.endsWith('061') ? '00000000-0000-4000-8000-000000000060' : null, directionRevisionId: '00000000-0000-4000-8000-000000000031', briefRevisionId: '00000000-0000-4000-8000-000000000020', fileUrl: summary.thumbnailUrl, externalFileUrl: null, isMetadataOnly: false, mimeType: 'image/jpeg', width: 640, height: 400, contentChecksum: null, prompt: null, negativePrompt: null, providerName: null, modelName: null, modelVersion: null, generationSettings: {}, recordedAttributes: emptyAttributes(), revisionRationale: 'Procedurally drawn fictional demo placeholder; generation metadata was not recorded.', references: [], isLatest: record.asset.latestVersion?.id === summary.id, pinnedIn: ['061', '062', '063'].some(id => summary.id.endsWith(id)) ? [{ collectionId: '00000000-0000-4000-8000-000000000070', collectionName: 'Solara Launch Hero Set', collectionRevisionId: '00000000-0000-4000-8000-000000000071', revisionNumber: 1, revisionStatus: 'APPROVED' }] : [], lineage: { derivedFrom: null, derivedVersions: [] }, createdBy: record.asset.createdBy })))
+  const versions: AssetVersion[] = records.flatMap(record => record.versions.map(summary => AssetVersionSchema.parse({ ...summary, assetTitle: record.asset.title, derivedFromVersionId: summary.id.endsWith('061') ? '00000000-0000-4000-8000-000000000060' : null, directionRevisionId: '00000000-0000-4000-8000-000000000031', briefRevisionId: '00000000-0000-4000-8000-000000000020', fileUrl: summary.thumbnailUrl, externalFileUrl: null, isMetadataOnly: false, mimeType: 'image/jpeg', width: 640, height: 400, contentChecksum: null, prompt: null, negativePrompt: null, providerName: null, modelName: null, modelVersion: null, generationSettings: {}, recordedAttributes: demoAttributes(summary.id), revisionRationale: 'Procedurally drawn fictional demo placeholder with authored demo attributes, not image analysis; generation metadata was not recorded.', references: [], isLatest: record.asset.latestVersion?.id === summary.id, pinnedIn: ['061', '062', '063'].some(id => summary.id.endsWith(id)) ? [{ collectionId: '00000000-0000-4000-8000-000000000070', collectionName: 'Solara Launch Hero Set', collectionRevisionId: '00000000-0000-4000-8000-000000000071', revisionNumber: 1, revisionStatus: 'APPROVED' }] : [], lineage: { derivedFrom: null, derivedVersions: [] }, createdBy: record.asset.createdBy })))
   const intents = new Map<string, { fingerprint: string; version: AssetVersion }>()
   const events: z.infer<typeof ActivityEventSchema>[] = []
   const headers = (request: Request) => ({ 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() })
@@ -42,5 +52,5 @@ export function createVersionStore(baseUrl: string, records: AssetRecord[], find
       return HttpResponse.json(ApiResponseSchema(AssetVersionSchema).parse({ data: result }), { status: 201, headers: headers(request) })
     }),
   ]
-  return { handlers, validate, append, directionOfLatest(record: AssetRecord) { const revision = versions.find(value => value.id === record.asset.latestVersion?.id)?.directionRevisionId; return revision ? context.directionFor(revision) : undefined } }
+  return { handlers, validate, append, all: () => versions.map(value => view(value)), directionOfLatest(record: AssetRecord) { const revision = versions.find(value => value.id === record.asset.latestVersion?.id)?.directionRevisionId; return revision ? context.directionFor(revision) : undefined } }
 }

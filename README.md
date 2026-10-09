@@ -115,6 +115,20 @@ failure and reuses an unchanged creation intent key. Old approval states and pin
 remain attached to the old version; newest-first history includes the appended
 version. Uploads, AI generation and version review decisions remain deferred.
 
+Impact Assessment & Impact Map is available through View impact map on Project
+Home. Compare exact direction/brief revisions, assess the latest non-archived
+versions or select historical version IDs, inspect prioritized recommendations
+and evidence, filter results, and open the exact evaluated version. Counts and
+recommendations come from the API. Pending/running reads use bounded polling;
+failed runs support explicit retry or rules-only fallback, and running runs can
+be cancelled. No mutation is retried automatically.
+
+The mock provider completes inline with a visible Simulated label and no image
+inspection. Cold Industrial to Warm Organic reproduces the documented Solara
+outcomes; other scopes conservatively require human review. This is a demo
+fixture, not a general compatibility engine. Human decisions and overrides are
+the next feature.
+
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:
 INTEGRATION_NOTES.md. Shared Zod schemas: packages/contracts/src/index.ts.
