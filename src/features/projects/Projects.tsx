@@ -4,6 +4,7 @@ import { projectApi, type ProjectView } from './api'
 import { ProjectHome } from './ProjectHome'
 import { ProjectStatus } from './ProjectStatus'
 import { BriefPage } from '../briefs/BriefPage'
+import { DirectionsPage } from '../directions/DirectionsPage'
 export { ProjectStatus } from './ProjectStatus'
 import { projectCopy as c } from './copy'
 import './projects.css'
@@ -38,9 +39,10 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   const generation = useRef(0)
   const nameInput = useRef<HTMLInputElement>(null)
   const createButton = useRef<HTMLButtonElement>(null)
-  const route = /^#\/projects\/([^/]+)(\/brief)?$/.exec(hash)
+  const route = /^#\/projects\/([^/]+)(\/(brief|directions))?$/.exec(hash)
   const projectId = route?.[1] ?? null
-  const briefRoute = Boolean(route?.[2])
+  const briefRoute = route?.[3] === 'brief'
+  const directionsRoute = route?.[3] === 'directions'
   useEffect(() => {
     const update = () => { setHash(window.location.hash); setFormOpen(false); setNotice('') }
     window.addEventListener('hashchange', update)
@@ -85,7 +87,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   return <section className="projects" aria-label={c.heading}>
     {isMockApi && <p className="mock-notice">{c.mock}</p>}
     {notice && <p role="status">{notice}</p>}
-    {projectId ? briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
+    {projectId ? briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : directionsRoute ? <DirectionsPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
       <div className="projects-heading"><div><h2>{c.heading}</h2><p>{c.intro}</p></div><button ref={createButton} type="button" disabled={saving} onClick={() => { setFormOpen(true); setFormError(null); setNameError(''); intent.current = createIntentKey() }}>{c.create}</button></div>
       {formOpen && <form className="project-form" onSubmit={create} aria-label={c.create}>
         <p>{c.blank}</p><label htmlFor="project-name">{c.name}</label><input ref={nameInput} id="project-name" disabled={saving} value={name} maxLength={160} aria-invalid={Boolean(nameError || formError?.details.some(value => value.path === 'body.name'))} aria-describedby="project-name-error" onChange={event => { setName(event.target.value); intent.current = createIntentKey() }} />

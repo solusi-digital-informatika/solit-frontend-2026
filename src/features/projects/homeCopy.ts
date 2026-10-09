@@ -13,5 +13,5 @@ export const homeCopy = {
   retry: 'Try again', requestId: 'Request ID', offline: 'You are offline. Reconnect to load this project from the backend.',
   back: 'All projects', owner: 'Owner', role: 'Your role', unknownRole: 'Unknown role', updated: 'Updated', noDescription: 'No description provided.',
   primary: 'Review active direction', primaryEmpty: 'Review project setup',
-  brief: 'View brief', next: 'Direction management will be added in the next feature.',
+  brief: 'View brief', directions: 'Manage directions', next: 'Reference and asset tools will be added in the next features.',
 } as const

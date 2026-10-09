@@ -1,0 +1,14 @@
+.directions-page { margin-top: 24px; }
+.directions-page h2 { margin-top: 24px; }
+.direction-selectors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 24px 0; }
+.direction-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.direction-form { padding: 24px; background: white; border: 1px solid var(--border); border-radius: 14px; margin-top: 24px; }
+.direction-form fieldset { min-width: 0; padding: 0; border: 0; }
+.direction-field { margin: 16px 0; }
+.direction-form .direction-group { border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin: 24px 0; }
+.palette-row { border-bottom: 1px solid var(--border); margin-bottom: 16px; padding-bottom: 16px; }
+.direction-form .attribute-checkbox { flex-direction: row; align-items: center; margin: 12px 0; }
+.direction-diff { padding-left: 20px; overflow-wrap: anywhere; }
+.activation-dialog { max-width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; border: 1px solid var(--border); border-radius: 16px; padding: 24px; color: #282638; }
+.activation-dialog::backdrop { background: rgb(40 38 56 / 40%); }
+@media (max-width: 600px) { .direction-selectors { grid-template-columns: 1fr; } .direction-form { padding: 16px; } }

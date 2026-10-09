@@ -22,6 +22,14 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Brief POST has no documented idempotency support, so the client prevents simultaneous submissions but never automatically retries ambiguous failed writes. The form directs users to check history after network/timeout failure.
 - Source Markdown is displayed as plain text. No extraction, HTML rendering, or AI analysis occurs.
 - Brief creation controls require a known OWNER/REVIEWER/EDITOR role; unknown roles and VIEWER are read-only.
+- Creative Directions mocks provide list/detail/create/clone, revisions, deterministic diff, audited activation, and metadata PATCH with expectedUpdatedAt checks.
+- Warm Organic uses …0040/…0041 from section 9. Directions and immutable revisions have separate mock storage; the project pointer resolves the exact active revision even when a newer revision exists.
+- Creation, revision, and activation write mock activity records; activation also writes a CHANGE_DIRECTION decision visible in Project Home. The activity screen is a later feature.
+- Metadata PATCH emits DIRECTION_METADATA_UPDATED as a generic eventType string (ActivityEvent explicitly permits unknown strings); reconcile this event label with the backend before the Activity Log feature.
+- Mock diff compares recorded attribute groups only, without AI interpretation. The UI displays the server's differences and does not compute them.
+- Direction history is read through cursor pagination. Forms preserve prior requirement IDs, source attributes, and nullable metadata; clones receive new direction/revision identities.
+- Direction/revision/activation POST has no contract idempotency support. In-flight duplicate submissions are prevented; failed writes are never automatically retried.
+- Asset/version/collection handlers are not implemented yet. Their direction-change invariants must be rechecked once those feature slices and the real backend are available; current tests verify brief and seeded count stability.
 - Schema exports use the documented type name plus Schema (e.g. ProjectSchema) and inferred type Project.
 - API requests time out after 15 seconds unless overridden; mutations are never automatically retried.
 

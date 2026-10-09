@@ -27,6 +27,8 @@ mock mode explicitly. Mock endpoints include GET /health, GET/POST /projects,
 and GET /projects/:id. Solara uses the canonical seed IDs. Creation offers blank
 projects; full demo cloning arrives with the associated domain fixtures.
 Brief mocks support revision list/latest/detail/create with immutable history.
+Direction mocks support list/detail/create/clone, immutable revisions, attribute
+diff, activation with decisions, and concurrency-checked metadata PATCH.
 Unimplemented API calls in mock mode fail rather than reach a real backend.
 The service worker is checked in at public/mockServiceWorker.js.
 
@@ -81,6 +83,14 @@ plain text. Viewer/unknown roles see read-only controls. Failed forms retain inp
 Brief writes have no contract idempotency support; after a network failure, check
 history before resubmitting. The browser test verifies old brief content remains
 unchanged after creating a revision, at desktop and phone widths.
+
+Creative Directions is available through Manage directions on Project Home.
+Create a direction, clone a selected revision, inspect revision history, compare
+two revisions, and activate an exact revision with a recorded reason. Saving a
+revision never activates it. Project Home resolves the pinned active revision and
+shows the activation decision. Comparisons are deterministic and network-local
+in mock mode; no AI is called. Browser tests cover revision creation, comparison,
+activation dialog Escape/focus behavior, and Project Home synchronization.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:

@@ -4,23 +4,26 @@ import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, Projec
 import { solaraProjectFixture } from './fixtures'
 import { summaryForProject } from './projectSummary'
 import { createBriefHandlers } from './briefs'
+import { createDirectionStore } from './directions'
 
 const inputSchema = z.object({ name: z.string().trim().min(1).max(160), description: z.string().trim().optional(), template: z.enum(['BLANK', 'DEMO_SOLARA']) })
 export function createProjectHandlers(baseUrl: string) {
   const projects: Project[] = [structuredClone(solaraProjectFixture)]
   const intents = new Map<string, { body: string; project: Project }>()
+  const directionStore = createDirectionStore(baseUrl, id => projects.find(project => project.id === id))
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'IDEMPOTENCY_KEY_REUSED', message: string, details: { path: string; message: string }[] = []) {
     const requestId = request.headers.get('X-Request-Id') ?? crypto.randomUUID()
     return HttpResponse.json(ApiErrorSchema.parse({ error: { code, message, requestId, details } }), { status, headers: { 'X-Request-Id': requestId } })
   }
   function headers(request: Request) { return { 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() } }
   return [
+    ...directionStore.handlers,
     ...createBriefHandlers(baseUrl, id => projects.find(project => project.id === id)),
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)
       if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
-      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: summaryForProject(project) }), { headers: headers(request) })
+      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: { ...summaryForProject(project), activeDirection: directionStore.activeContext(project), recentDecisions: directionStore.recentDecisions(project.id) } }), { headers: headers(request) })
     }),
     http.get(`${baseUrl}/projects`, ({ request }) => {
       const query = new URL(request.url).searchParams
