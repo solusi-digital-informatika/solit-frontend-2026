@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, AttributeRequirementSchema, BriefRevisionSchema, BriefRevisionInputSchema, UUIDSchema, type Project, type BriefRevision } from '../../packages/contracts/src'
+import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, AttributeRequirementSchema, BriefRevisionSchema, BriefRevisionInputSchema, UUIDSchema, ActivityEventSchema, type ActivityEvent, type Project, type BriefRevision } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
 
 export const solaraBriefFixture = BriefRevisionSchema.parse({
@@ -14,6 +14,7 @@ const requestAttribute = AttributeRequirementSchema.extend({ id: UUIDSchema.opti
 const requestSchema = BriefRevisionInputSchema.partial().extend({ title: z.string().trim().min(1), objective: z.string().trim().min(1), requirements: z.array(requestAttribute).optional(), forbiddenAttributes: z.array(requestAttribute).optional() })
 export function createBriefStore(baseUrl: string, findProject: (id: string) => Project | undefined) {
   const revisions: BriefRevision[] = [structuredClone(solaraBriefFixture)]
+  const events: ActivityEvent[] = []
   function headers(request: Request) { return { 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() } }
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND', message: string, details: { path: string; message: string }[] = []) {
     const requestId = headers(request)['X-Request-Id']
@@ -63,8 +64,9 @@ export function createBriefStore(baseUrl: string, findProject: (id: string) => P
       const input = parsed.data
       const revision = BriefRevisionSchema.parse({ ...input, deliverables: input.deliverables ?? [], constraints: input.constraints ?? [], acceptanceCriteria: input.acceptanceCriteria ?? [], requirements: (input.requirements ?? []).map(value => ({ ...value, id: value.id ?? crypto.randomUUID() })), forbiddenAttributes: (input.forbiddenAttributes ?? []).map(value => ({ ...value, id: value.id ?? crypto.randomUUID() })), targetAudience: input.targetAudience?.trim() || null, sourceText: input.sourceText?.trim() || null, changeSummary: input.changeSummary?.trim() || null, id: crypto.randomUUID(), projectId: project.id, revisionNumber: (previous?.revisionNumber ?? 0) + 1, createdBy: project.owner, createdAt: new Date().toISOString() })
       revisions.unshift(revision)
+      events.push(ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: project.id, actor: project.owner, eventType: 'BRIEF_REVISION_CREATED', entityType: 'BRIEF_REVISION', entityId: revision.id, summary: `Created brief revision ${revision.revisionNumber}.`, metadata: {}, requestId: headers(request)['X-Request-Id'], createdAt: revision.createdAt }))
       return HttpResponse.json(ApiResponseSchema(BriefRevisionSchema).parse({ data: revision }), { status: 201, headers: headers(request) })
     }),
   ]
-  return { handlers, projectFor: (id: string) => revisions.find(value => value.id === id)?.projectId, latestId: (projectId: string) => revisions.find(value => value.projectId === projectId)?.id ?? null }
+  return { handlers, events, snapshot: (projectId: string) => revisions.filter(value => value.projectId === projectId), projectFor: (id: string) => revisions.find(value => value.id === id)?.projectId, latestId: (projectId: string) => revisions.find(value => value.projectId === projectId)?.id ?? null }
 }

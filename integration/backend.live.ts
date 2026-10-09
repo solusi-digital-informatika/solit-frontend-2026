@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { z } from 'zod'
-import { ApiResponseSchema, ApiListSchema, HealthStatusSchema, ProjectSchema, ProjectSummarySchema, BriefRevisionSchema, DirectionSchema, DirectionRevisionSchema, ReferenceSchema, AssetSchema, AssetDetailSchema, AssetVersionSchema, ImpactAssessmentSchema, DecisionSchema, CollectionSchema, CollectionDetailSchema, CollectionRevisionSchema } from '../packages/contracts/src/index.ts'
+import { ApiResponseSchema, ApiListSchema, HealthStatusSchema, ProjectSchema, ProjectSummarySchema, BriefRevisionSchema, DirectionSchema, DirectionRevisionSchema, ReferenceSchema, AssetSchema, AssetDetailSchema, AssetVersionSchema, ImpactAssessmentSchema, DecisionSchema, CollectionSchema, CollectionDetailSchema, CollectionRevisionSchema, ActivityEventSchema } from '../packages/contracts/src/index.ts'
 const base = 'https://api.solit.my.id/api/v1'
 async function read<T>(request: APIRequestContext, path: string, schema: z.ZodType<T>): Promise<T> {
   const response = await request.get(base + path, { headers: { 'X-Request-Id': crypto.randomUUID() } })
@@ -21,18 +21,20 @@ test('deployed backend supports completed frontend features through real browser
   const assets = await read(request, `${root}/assets`, ApiListSchema(AssetSchema))
   for (const asset of assets.data.slice(0, 4)) { await read(request, `/assets/${asset.id}`, ApiResponseSchema(AssetDetailSchema)); if (asset.latestVersion) await read(request, `/asset-versions/${asset.latestVersion.id}`, ApiResponseSchema(AssetVersionSchema)) }
   await read(request, `${root}/decisions?currentOnly=false&sort=createdAt:desc`, ApiListSchema(DecisionSchema))
+  await read(request, `${root}/activity?sort=createdAt:desc`, ApiListSchema(ActivityEventSchema))
   const assessments = await read(request, `${root}/impact-assessments`, ApiListSchema(ImpactAssessmentSchema)); if (assessments.data.length) await read(request, `/impact-assessments/${assessments.data[0].id}`, ApiResponseSchema(ImpactAssessmentSchema))
   const collections = await read(request, `${root}/collections`, ApiListSchema(CollectionSchema)); for (const collection of collections.data) { await read(request, `/collections/${collection.id}`, ApiResponseSchema(CollectionDetailSchema)); await read(request, `/collection-revisions/${collection.latestRevision.id}`, ApiResponseSchema(CollectionRevisionSchema)) }
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
   const browserHealth = page.waitForResponse(response => response.url() === `${base}/health` && response.ok())
   await page.goto('/#/projects'); await browserHealth; await expect(page.getByText('Backend API mode', { exact: true })).toBeVisible(); await expect(page.getByRole('heading', { name: project.name })).toBeVisible()
-  for (const [suffix, heading] of [['', project.name], ['/brief', 'Brief'], ['/directions', 'Creative directions'], ['/references', 'Reference Board'], ['/assets', 'Asset Library'], ['/impact', 'Impact Assessment & Impact Map'], ['/decisions', 'Human decisions'], ['/collections', 'Collections & Review']]) {
+  for (const [suffix, heading] of [['', project.name], ['/brief', 'Brief'], ['/directions', 'Creative directions'], ['/references', 'Reference Board'], ['/assets', 'Asset Library'], ['/impact', 'Impact Assessment & Impact Map'], ['/decisions', 'Human decisions'], ['/collections', 'Collections & Review'], ['/activity', 'Activity log']]) {
     await page.goto(`/#${root}${suffix}`)
     await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
     // Await the feature's list/context requests before checking for an error state.
     if (suffix === '/impact') await expect(page.getByRole('button', { name: 'Start assessment', exact: true })).toBeVisible()
     if (suffix === '/assets' && assets.data.length) await expect(page.getByRole('heading', { name: assets.data[0].title })).toBeVisible()
     if (suffix === '/collections' && collections.data.length) await expect(page.getByRole('heading', { name: collections.data[0].name, exact: true })).toBeVisible()
+    if (suffix === '/activity') await expect(page.getByRole('button', { name: 'Create export', exact: true })).toBeVisible()
     await expect(page.getByRole('alert')).toHaveCount(0)
   }
   if (assets.data[0]?.latestVersion) { const asset = assets.data[0]; await page.goto(`/#${root}/assets/${asset.id}/versions/${asset.latestVersion!.id}`); await expect(page.getByRole('article', { name: `Selected version: Version ${asset.latestVersion!.versionNumber}` })).toBeVisible(); await expect(page.getByRole('alert')).toHaveCount(0) }

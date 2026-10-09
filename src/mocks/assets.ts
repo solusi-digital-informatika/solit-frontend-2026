@@ -68,7 +68,8 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
       return HttpResponse.json(ApiResponseSchema(AssetSchema).parse({ data: record.asset }), { headers: headers(request) })
     }),
   ]
-  return { handlers, events,
+  return { handlers, events, versionEvents: versionStore.events,
+    snapshot: (projectId: string) => records.filter(value => value.asset.projectId === projectId).map(value => ({ ...detail(value), versions: versionStore.all().filter(version => version.assetId === value.asset.id) })),
     versions: (id: string) => versionStore.all().filter(value => value.assetId === id),
     version: (id: string) => versionStore.all().find(value => value.id === id),
     latestVersions: (projectId: string) => versionStore.all().filter(version => version.isLatest && records.some(record => record.asset.id === version.assetId && record.asset.projectId === projectId && !record.asset.archivedAt)).map(version => ({ version, asset: records.find(record => record.asset.id === version.assetId)!.asset })),

@@ -13,3 +13,8 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; line-height: 1.6; }
 :focus-visible { outline: 3px solid #6941b0; outline-offset: 4px; }
+.welcome { max-width:1560px; margin:0 auto; padding:0 28px; }
+button { font:inherit; cursor:pointer; }
+code { overflow-wrap:anywhere; }
+.ui-icon { width:22px; height:22px; flex-shrink:0; }
+::selection { background:#e1d3f8; color:#382651; }

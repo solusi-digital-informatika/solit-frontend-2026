@@ -27,17 +27,12 @@ function App({ client, isMockApi }: { client: ApiClient; isMockApi: boolean }) {
     return () => controller.abort()
   }, [client, attempt])
   return (
-    <main className="welcome">
-      <p className="eyebrow">{copy.brand}</p>
-      <h1>{copy.title}</h1>
-      <p className="description">{copy.description}</p>
-      <p className="mode">{isMockApi ? copy.mock : copy.live}</p>
-      {offline && !isMockApi && <p role="status">{copy.offline}</p>}
-      {connection.kind === 'loading' && <p role="status">{copy.loading}</p>}
-      {connection.kind === 'ready' && <section aria-label="API connection" className="connection" role="status">
-        <p className="setup-status">{copy.connected}</p>
-        <p>Contract v{connection.contractVersion}</p>
-      </section>}
+    <div className="app-shell">
+      <a className="skip-link" href="#workspace-content" onClick={event => { event.preventDefault(); document.getElementById('workspace-content')?.focus() }}>Skip to workspace</a>
+      <header className="app-topbar"><a className="app-brand" href="#/projects" aria-label="Branchframe workspace"><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span><span><h1>{copy.brand}</h1><span className="brand-subtitle">Creative workspace</span></span></a><div className="topbar-message">Ideas evolve. Good work stays.</div><div className="topbar-status"><span className={`mode ${isMockApi ? 'demo-mode' : ''}`}><span className="mode-dot" aria-hidden="true" />{isMockApi ? copy.mock : copy.live}</span>{connection.kind === 'ready' && <details className="connection-details"><summary aria-label="Connection details"><span className="connection-dot" aria-hidden="true" /> Connected</summary><section aria-label="API connection" className="connection"><p>{copy.connected}</p><p>Contract v{connection.contractVersion}</p></section></details>}</div></header>
+      <main className="welcome" id="workspace-content" tabIndex={-1}>
+      {offline && !isMockApi && <p role="status" className="offline-notice">{copy.offline}</p>}
+      {connection.kind === 'loading' && <div className="boot-state"><span className="loading-orbit" aria-hidden="true" /><p role="status">{copy.loading}</p></div>}
       {connection.kind === 'ready' && <Projects client={client} isMockApi={isMockApi} />}
       {connection.kind === 'error' && <section role="alert" className="connection error">
         <h2>{copy.failed}</h2>
@@ -45,7 +40,8 @@ function App({ client, isMockApi }: { client: ApiClient; isMockApi: boolean }) {
         {connection.error.requestId && <p>{copy.requestId}: <code>{connection.error.requestId}</code></p>}
         <button type="button" onClick={() => { setConnection({ kind: 'loading' }); setAttempt(value => value + 1) }}>{copy.retry}</button>
       </section>}
-    </main>
+      </main>
+    </div>
   )
 }
 export default App

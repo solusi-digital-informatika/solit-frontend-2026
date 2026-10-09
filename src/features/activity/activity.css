@@ -1,0 +1,8 @@
+.activity-page label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.activity-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.activity-filters details, .activity-filters .project-actions, .activity-filters [role=alert] { grid-column: 1 / -1; }
+.activity-page input, .activity-page select { min-width: 0; width: 100%; box-sizing: border-box; }
+.activity-list { padding-left: 24px; }
+.activity-list li { margin-top: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.activity-page .project-actions { flex-wrap: wrap; }
+@media (max-width: 600px) { .activity-filters { grid-template-columns: minmax(0, 1fr); } }

@@ -1,4 +1,7 @@
-import { CollectionsPage } from '../collections/CollectionsPage'
+﻿import { CollectionsPage } from '../collections/CollectionsPage'
+import { ActivityPage } from '../activity/ActivityPage'
+import { WorkspaceSidebar } from '../../components/WorkspaceSidebar'
+import { Icon } from '../../components/Icon'
 import { DecisionsPage } from '../decisions/DecisionsPage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApiClientError, createIntentKey, type ApiClient } from '../../lib/api/client'
@@ -13,6 +16,7 @@ import { ImpactPage } from '../impact/ImpactPage'
 export { ProjectStatus } from './ProjectStatus'
 import { projectCopy as c } from './copy'
 import './projects.css'
+import '../../styles/workspace.css'
 
 function asError(error: unknown) { return error instanceof ApiClientError ? error : new ApiClientError('The request failed. Please try again.', { code: 'UNKNOWN' }) }
 function ErrorMessage({ error, retry }: { error: ApiClientError; retry?: () => void }) {
@@ -44,7 +48,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   const generation = useRef(0)
   const nameInput = useRef<HTMLInputElement>(null)
   const createButton = useRef<HTMLButtonElement>(null)
-  const route = /^#\/projects\/([^/]+)(?:\/(brief|directions|references|assets|impact|decisions|collections)(?:\/([^/]+)(?:\/(versions|revisions)\/([^/]+))?)?)?$/.exec(hash)
+  const route = /^#\/projects\/([^/]+)(?:\/(brief|directions|references|assets|impact|decisions|collections|activity)(?:\/([^/]+)(?:\/(versions|revisions)\/([^/]+))?)?)?$/.exec(hash)
   const projectId = route?.[1] ?? null
   const briefRoute = route?.[2] === 'brief'
   const directionsRoute = route?.[2] === 'directions'
@@ -89,11 +93,13 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
     } catch (value) { setFormError(asError(value)) }
     finally { busy.current = false; setSaving(false) }
   }
-  return <section className="projects" aria-label={c.heading}>
+  return <section className="projects workspace-layout" aria-label={c.heading}>
+    <WorkspaceSidebar projectId={projectId} section={route?.[2]} />
+    <div className="workspace-main" data-section={projectId ? route?.[2] ?? 'overview' : 'projects'}>
     {isMockApi && <p className="mock-notice">{c.mock}</p>}
     {notice && <p role="status">{notice}</p>}
-    {projectId ? route?.[2] === 'collections' ? <CollectionsPage key={projectId} client={client} projectId={projectId} collectionId={route?.[3]} revisionId={route?.[4] === 'revisions' ? route?.[5] : undefined} /> : route?.[2] === 'decisions' ? <DecisionsPage key={projectId} client={client} projectId={projectId} /> : route?.[2] === 'impact' ? <ImpactPage key={projectId} client={client} projectId={projectId} assessmentId={route?.[3]} /> : route?.[2] === 'assets' ? <AssetLibrary key={projectId} client={client} projectId={projectId} assetId={route?.[3]} versionId={route?.[4] === 'versions' ? route?.[5] : undefined} /> : route?.[2] === 'references' ? <ReferenceBoard key={projectId} client={client} projectId={projectId} /> : briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : directionsRoute ? <DirectionsPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
-      <div className="projects-heading"><div><h2>{c.heading}</h2><p>{c.intro}</p></div><button ref={createButton} type="button" disabled={saving} onClick={() => { setFormOpen(true); setFormError(null); setNameError(''); intent.current = createIntentKey() }}>{c.create}</button></div>
+    {projectId ? route?.[2] === 'activity' ? <ActivityPage key={projectId} client={client} projectId={projectId} /> : route?.[2] === 'collections' ? <CollectionsPage key={projectId} client={client} projectId={projectId} collectionId={route?.[3]} revisionId={route?.[4] === 'revisions' ? route?.[5] : undefined} /> : route?.[2] === 'decisions' ? <DecisionsPage key={projectId} client={client} projectId={projectId} /> : route?.[2] === 'impact' ? <ImpactPage key={projectId} client={client} projectId={projectId} assessmentId={route?.[3]} /> : route?.[2] === 'assets' ? <AssetLibrary key={projectId} client={client} projectId={projectId} assetId={route?.[3]} versionId={route?.[4] === 'versions' ? route?.[5] : undefined} /> : route?.[2] === 'references' ? <ReferenceBoard key={projectId} client={client} projectId={projectId} /> : briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : directionsRoute ? <DirectionsPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
+      <div className="projects-heading"><div><p className="eyebrow">Your creative space</p><h2>{c.heading}</h2><p>{c.intro}</p></div><button ref={createButton} type="button" disabled={saving} onClick={() => { setFormOpen(true); setFormError(null); setNameError(''); intent.current = createIntentKey() }}><Icon name="projects" />{c.create}</button></div>
       {formOpen && <form className="project-form" onSubmit={create} aria-label={c.create}>
         <p>{c.blank}</p><label htmlFor="project-name">{c.name}</label><input ref={nameInput} id="project-name" disabled={saving} value={name} maxLength={160} aria-invalid={Boolean(nameError || formError?.details.some(value => value.path === 'body.name'))} aria-describedby="project-name-error" onChange={event => { setName(event.target.value); intent.current = createIntentKey() }} />
         <p id="project-name-error">{nameError || formError?.details.find(value => value.path === 'body.name')?.message}</p>
@@ -105,9 +111,11 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
       {loading ? <p role="status">{c.loading}</p> : <>
         {error && <ErrorMessage error={error} retry={() => loadingMore ? undefined : setAttempt(value => value + 1)} />}
         {!error && items.length === 0 && <p role="status">{q || status === 'ARCHIVED' ? c.noResults : c.empty}</p>}
-        <ul className="project-grid">{items.map(project => <li key={project.id} className="project-card"><ProjectStatus status={project.status} /><h3><a href={`#/projects/${project.id}`}>{project.name}</a></h3><p>{project.description ?? c.noDescription}</p><p className="note">{c.owner}: {project.owner.displayName}</p><a href={`#/projects/${project.id}`}>{c.open} →</a></li>)}</ul>
+        <ul className="project-grid">{items.map(project => <li key={project.id} className="project-card"><div className="project-art" aria-hidden="true"><span /><span /><span /></div><ProjectStatus status={project.status} /><h3><a href={`#/projects/${project.id}`}>{project.name}</a></h3><p>{project.description ?? c.noDescription}</p><p className="note">{c.owner}: {project.owner.displayName}</p><a href={`#/projects/${project.id}`}>{c.open} â†’</a></li>)}</ul>
         {cursor && <button type="button" disabled={loadingMore} onClick={() => void more()}>{loadingMore ? c.loading : c.loadMore}</button>}
       </>}
     </>}
+    </div>
   </section>
 }
+

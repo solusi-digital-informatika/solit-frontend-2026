@@ -77,8 +77,8 @@ shows the active direction and exact revision, server-provided asset/review/stal
 counts, the latest assessment (with Simulated label when applicable), and recent
 human decisions. New blank projects show empty states. Mock writes survive navigation
 and reset on reload. Creation reuses its intent key on retry and prevents duplicate
-submissions. Other screens, persistence, the assessment workflow, and real backend
-integration are not implemented yet. The browser smoke test checks opening Solara,
+submissions. Additional feature screens are described below; mock data remains
+session-local and resets on reload. The browser smoke test checks opening Solara,
 focus navigation, and viewport overflow at desktop and phone widths using installed
 Microsoft Edge. The full product E2E scenario arrives with subsequent features.
 
@@ -149,6 +149,20 @@ rationale. Submit for review, approve or request changes/reject with recorded
 comments. Approved revisions freeze their pins; later approval supersedes the
 previous revision without changing its history or approving asset versions.
 Collection metadata supports conflict comparison and archive/restore.
+
+Activity Log & Export is available through View activity & export on Project Home.
+Apply server filters by event, local date range, actor and entity IDs; load further
+pages, inspect actor/timestamp/request IDs, and refresh recorded history. Unknown
+event types render a generic label, and only known metadata fields are shown.
+All known project roles, including viewers, can create JSON, Markdown or CSV
+exports. Review API warnings and download the returned file. JSON includes full
+historical versions, assessments, decision supersession and exact collection pins;
+Markdown summarizes the project; CSV lists each asset's latest version. The mock
+serializer removes resolved media URLs, credential fields and signed URLs, warns
+about local demo paths/metadata-only versions, and protects CSV cells from formula
+execution. Export writes are never retried automatically. Live serialization and
+redaction remain backend responsibilities. Activity reads were verified against
+the deployed backend; live export writes have not been exercised.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:

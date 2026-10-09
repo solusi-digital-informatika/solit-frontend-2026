@@ -52,5 +52,5 @@ export function createVersionStore(baseUrl: string, records: AssetRecord[], find
       return HttpResponse.json(ApiResponseSchema(AssetVersionSchema).parse({ data: result }), { status: 201, headers: headers(request) })
     }),
   ]
-  return { handlers, validate, append, all: () => versions.map(value => view(value)), directionOfLatest(record: AssetRecord) { const revision = versions.find(value => value.id === record.asset.latestVersion?.id)?.directionRevisionId; return revision ? context.directionFor(revision) : undefined } }
+  return { handlers, events, validate, append, all: () => versions.map(value => view(value)), directionOfLatest(record: AssetRecord) { const revision = versions.find(value => value.id === record.asset.latestVersion?.id)?.directionRevisionId; return revision ? context.directionFor(revision) : undefined } }
 }

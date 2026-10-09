@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, type Project } from '../../packages/contracts/src'
+import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, ActivityEventSchema, type ActivityEvent, type Project } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
 import { summaryForProject } from './projectSummary'
 import { createBriefStore } from './briefs'
@@ -11,10 +11,12 @@ import { createCollectionStore } from './collections'
 import { createAssessmentStore } from './assessments'
 import { decisionHistoryHandler } from './decisionHistory'
 import { assessmentDiff } from './assessmentDiff'
+import { activityExportHandlers } from './activityExport'
 
 const inputSchema = z.object({ name: z.string().trim().min(1).max(160), description: z.string().trim().optional(), template: z.enum(['BLANK', 'DEMO_SOLARA']) })
 export function createProjectHandlers(baseUrl: string) {
   const projects: Project[] = [structuredClone(solaraProjectFixture)]
+  const projectEvents: ActivityEvent[] = [ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: solaraProjectFixture.id, actor: solaraProjectFixture.owner, eventType: 'PROJECT_CREATED', entityType: 'PROJECT', entityId: solaraProjectFixture.id, summary: 'Created fictional Solara demo project.', metadata: {}, requestId: null, createdAt: solaraProjectFixture.createdAt })]
   const intents = new Map<string, { body: string; project: Project }>()
   const directionStore = createDirectionStore(baseUrl, id => projects.find(project => project.id === id))
   const briefStore = createBriefStore(baseUrl, id => projects.find(project => project.id === id))
@@ -34,6 +36,7 @@ export function createProjectHandlers(baseUrl: string) {
     ...briefStore.handlers,
     ...assessmentStore.handlers,
     ...collectionStore.handlers,
+    ...activityExportHandlers(baseUrl, id => projects.find(value => value.id === id), () => [...projectEvents, ...briefStore.events, ...directionStore.activity, ...referenceStore.events, ...assetStore.events, ...assetStore.versionEvents, ...assessmentStore.events, ...collectionStore.events], id => ({ project: projects.find(value => value.id === id)!, briefRevisions: briefStore.snapshot(id), directions: directionStore.snapshot(id), references: referenceStore.snapshot(id), assets: assetStore.snapshot(id), assessments: assessmentStore.snapshot(id), decisions: [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions].filter(value => value.projectId === id), collections: collectionStore.snapshot(id) }), projectEvents),
     decisionHistoryHandler(baseUrl, id => projects.some(project => project.id === id), () => [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions], assessmentStore.itemAssessment),
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
@@ -81,6 +84,7 @@ export function createProjectHandlers(baseUrl: string) {
       const now = new Date().toISOString()
       const project = ProjectSchema.parse({ ...solaraProjectFixture, id: crypto.randomUUID(), name: parsed.data.name, slug: `${parsed.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'project'}-${crypto.randomUUID().slice(0, 8)}`, description: parsed.data.description || null, activeDirectionRevisionId: null, createdAt: now, updatedAt: now })
       projects.unshift(project)
+      projectEvents.push(ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: project.id, actor: project.owner, eventType: 'PROJECT_CREATED', entityType: 'PROJECT', entityId: project.id, summary: 'Created project.', metadata: {}, requestId: headers(request)['X-Request-Id'], createdAt: now }))
       if (key) intents.set(key, { body: fingerprint, project })
       return HttpResponse.json(ApiResponseSchema(ProjectSchema).parse({ data: project }), { status: 201, headers: headers(request) })
     }),
