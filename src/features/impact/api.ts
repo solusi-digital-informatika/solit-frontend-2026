@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import { ApiResponseSchema, ApiListSchema, ImpactAssessmentSchema, ImpactAssessmentItemSchema, EvidenceSchema } from '../../../packages/contracts/src'
+import { ApiResponseSchema, ApiListSchema, ImpactAssessmentSchema, ImpactAssessmentItemSchema, EvidenceSchema, DecisionSchema } from '../../../packages/contracts/src'
 import type { ApiClient } from '../../lib/api/client'
 const evidence = EvidenceSchema.extend({ source: z.string() })
-export const ItemViewSchema = ImpactAssessmentItemSchema.extend({ recommendation: z.string(), effectiveRecommendation: z.string(), resolutionStatus: z.string(), uncertaintyLevel: z.string(), analysisSource: z.string(), assetVersion: ImpactAssessmentItemSchema.shape.assetVersion.extend({ status: z.string(), assetType: z.string() }), supportingEvidence: z.array(evidence), conflictingEvidence: z.array(evidence) })
+export const ItemViewSchema = ImpactAssessmentItemSchema.extend({ recommendation: z.string(), effectiveRecommendation: z.string(), resolutionStatus: z.string(), uncertaintyLevel: z.string(), analysisSource: z.string(), latestDecision: DecisionSchema.extend({ decisionType: z.string(), previousRecommendation: z.string().nullable(), newRecommendation: z.string().nullable() }).nullable(), assetVersion: ImpactAssessmentItemSchema.shape.assetVersion.extend({ status: z.string(), assetType: z.string() }), supportingEvidence: z.array(evidence), conflictingEvidence: z.array(evidence) })
 export const AssessmentViewSchema = ImpactAssessmentSchema.extend({ status: z.string(), mode: z.string(), items: z.array(ItemViewSchema).nullable(), directionDiff: ImpactAssessmentSchema.shape.directionDiff.extend({ changes: z.array(ImpactAssessmentSchema.shape.directionDiff.shape.changes.element.extend({ category: z.string(), kind: z.string() })) }) })
 export type AssessmentView = z.infer<typeof AssessmentViewSchema>
 export type ItemView = z.infer<typeof ItemViewSchema>

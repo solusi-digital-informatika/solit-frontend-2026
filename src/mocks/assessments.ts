@@ -1,8 +1,9 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { UUIDSchema, ApiResponseSchema, ApiListSchema, ApiErrorSchema, ImpactAssessmentSchema, ImpactAssessmentItemSchema, AssetVersionRefSchema, AssessmentModeSchema, AssessmentStatusSchema, RecommendationSchema, ResolutionStatusSchema, ActivityEventSchema, type Project, type Asset, type AssetVersion, type ImpactAssessment, type DirectionDiff, type Recommendation } from '../../packages/contracts/src'
+import { UUIDSchema, ApiResponseSchema, ApiListSchema, ApiErrorSchema, ImpactAssessmentSchema, ImpactAssessmentItemSchema, AssetVersionRefSchema, AssessmentModeSchema, AssessmentStatusSchema, RecommendationSchema, ResolutionStatusSchema, ActivityEventSchema, DecisionSchema, ResolveItemInputSchema, type Decision, type Project, type Asset, type AssetVersion, type ImpactAssessment, type DirectionDiff, type Recommendation } from '../../packages/contracts/src'
 interface Context { directionProject: (id: string) => string | undefined; briefProject: (id: string) => string | undefined; latestBrief: (projectId: string) => string | null; version: (id: string) => AssetVersion | undefined; asset: (id: string) => Asset | undefined; latestVersions: (projectId: string) => { version: AssetVersion; asset: Asset }[]; diff: (from: string | null, to: string) => DirectionDiff }
 export function createAssessmentStore(baseUrl: string, findProject: (id: string) => Project | undefined, context: Context) {
+  const decisions: Decision[] = []
   const records: ImpactAssessment[] = []; const events: z.infer<typeof ActivityEventSchema>[] = []; const intents = new Map<string, { body: string; result: ImpactAssessment }>()
   const headers = (request: Request) => ({ 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() })
   function error(request: Request, status: number, code: string, message: string, details: { path: string; message: string }[] = []) { const requestId = headers(request)['X-Request-Id']; return HttpResponse.json(ApiErrorSchema.parse({ error: { code, message, details, requestId } }), { status, headers: { 'X-Request-Id': requestId } }) }
@@ -17,6 +18,27 @@ export function createAssessmentStore(baseUrl: string, findProject: (id: string)
     '061': { recommendation: 'REUSE_CANDIDATE', rationale: 'Composition and mood are compatible with the target direction; no hard conflicts are recorded.', uncertainty: 'MEDIUM', priority: 4, missing: [] },
   }
   const handlers = [
+    http.post(`${baseUrl}/impact-assessments/:assessmentId/items/:itemId/decision`, async ({ request, params }) => {
+      const record = find(request, params.assessmentId); if (record instanceof Response) return record
+      if (!UUIDSchema.safeParse(params.itemId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid item identifier.')
+      if (record.status !== 'COMPLETED') return error(request, 409, 'INVALID_STATE_TRANSITION', 'Only completed assessments can be resolved.')
+      const item = record.items?.find(value => value.id === params.itemId); if (!item) return error(request, 404, 'NOT_FOUND', 'Item not found in this assessment.')
+      let body: unknown; try { body = await request.json() } catch { body = null }
+      const parsed = ResolveItemInputSchema.safeParse(body); if (!parsed.success) return error(request, 400, 'VALIDATION_ERROR', 'Check the decision fields.', parsed.error.issues.map(issue => ({ path: `body.${issue.path.join('.')}`, message: issue.message })))
+      const input = parsed.data
+      if (input.resolution === 'OVERRIDE' && input.overrideRecommendation === item.recommendation) return error(request, 400, 'VALIDATION_ERROR', 'Override must differ from the original recommendation.', [{ path: 'body.overrideRecommendation', message: 'Choose another recommendation.' }])
+      if (input.resolution !== 'OVERRIDE' && input.overrideRecommendation) return error(request, 400, 'VALIDATION_ERROR', 'Only overrides may specify a replacement recommendation.')
+      const now = new Date().toISOString(); const previous = item.latestDecision
+      const next = input.resolution === 'OVERRIDE' ? input.overrideRecommendation! : item.recommendation
+      const types = { ACCEPT: 'ACCEPT_RECOMMENDATION', OVERRIDE: 'OVERRIDE_RECOMMENDATION', DEFER: 'DEFER_RECOMMENDATION', DISMISS: 'DISMISS_RECOMMENDATION' } as const
+      const statuses = { ACCEPT: 'ACCEPTED', OVERRIDE: 'OVERRIDDEN', DEFER: 'DEFERRED', DISMISS: 'DISMISSED' } as const
+      const decision = DecisionSchema.parse({ id: crypto.randomUUID(), projectId: record.projectId, assessmentItemId: item.id, assetId: item.assetVersion.assetId, assetVersionId: item.assetVersion.id, directionRevisionId: record.newDirectionRevisionId, collectionRevisionId: null, decisionType: types[input.resolution], selectedAction: input.selectedAction?.trim() || null, rationale: input.rationale?.trim() || (input.resolution === 'ACCEPT' ? 'Accepted without comment' : 'Deferred without comment'), previousRecommendation: item.effectiveRecommendation, newRecommendation: next, supersedesDecisionId: previous?.id ?? null, supersededByDecisionId: null, createdBy: record.startedBy, createdAt: now })
+      if (previous) { const old = decisions.find(value => value.id === previous.id); if (old) old.supersededByDecisionId = decision.id }
+      decisions.unshift(decision); item.latestDecision = decision; item.resolutionStatus = statuses[input.resolution]; item.effectiveRecommendation = next; item.updatedAt = now
+      record.counts.unresolved = record.items!.filter(value => ['UNRESOLVED', 'DEFERRED'].includes(value.resolutionStatus)).length
+      events.push(ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: record.projectId, actor: decision.createdBy, eventType: 'RECOMMENDATION_RESOLVED', entityType: 'IMPACT_ASSESSMENT_ITEM', entityId: item.id, summary: `Recorded ${input.resolution.toLowerCase()} decision.`, metadata: { decisionId: decision.id }, requestId: headers(request)['X-Request-Id'], createdAt: now }))
+      return HttpResponse.json(ApiResponseSchema(z.object({ decision: DecisionSchema, item: ImpactAssessmentItemSchema })).parse({ data: { decision, item } }), { status: 201, headers: headers(request) })
+    }),
     http.post(`${baseUrl}/projects/:projectId/impact-assessments`, async ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = findProject(String(params.projectId)); if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
@@ -55,5 +77,5 @@ export function createAssessmentStore(baseUrl: string, findProject: (id: string)
     http.post(`${baseUrl}/impact-assessments/:assessmentId/cancel`, ({ request, params }) => { const record = find(request, params.assessmentId); if (record instanceof Response) return record; if (!['PENDING', 'RUNNING'].includes(record.status)) return error(request, 409, 'INVALID_STATE_TRANSITION', 'Only a pending/running assessment can be cancelled.'); record.status = 'CANCELLED'; record.items = null; record.completedAt = new Date().toISOString(); audit(request, record, 'ASSESSMENT_CANCELLED'); return response(request, record) }),
     http.post(`${baseUrl}/impact-assessments/:assessmentId/retry`, ({ request, params }) => { const record = find(request, params.assessmentId); if (record instanceof Response) return record; if (record.status !== 'FAILED') return error(request, 409, 'INVALID_STATE_TRANSITION', 'Only a failed assessment can be retried.'); record.status = 'RUNNING'; record.errorCode = null; record.errorSummary = null; return response(request, record) }),
   ]
-  return { handlers, events, latest: (projectId: string) => records.find(record => record.projectId === projectId), unresolved: (projectId: string) => records.filter(record => record.projectId === projectId && record.status === 'COMPLETED').reduce((total, record) => total + record.counts.unresolved, 0) }
+  return { handlers, events, decisions, itemAssessment: (id: string) => records.find(record => record.items?.some(item => item.id === id))?.id, latest: (projectId: string) => records.find(record => record.projectId === projectId), unresolved: (projectId: string) => records.find(record => record.projectId === projectId && record.status === 'COMPLETED')?.counts.unresolved ?? 0 }
 }

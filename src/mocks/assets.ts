@@ -1,9 +1,9 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiListSchema, ApiResponseSchema, ApiErrorSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetVersionInputSchema, AssetTypeSchema, AssetStatusSchema, UUIDSchema, ActivityEventSchema, type Project, type AssetDetail } from '../../packages/contracts/src'
+import { ApiListSchema, ApiResponseSchema, ApiErrorSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetVersionInputSchema, AssetTypeSchema, AssetStatusSchema, UUIDSchema, ActivityEventSchema, type Project, type AssetDetail, type Decision } from '../../packages/contracts/src'
 import { assetTargetFixtures } from './assetFixtures'
 import { createVersionStore, type VersionContext, type AssetRecord } from './versions'
-export function createAssetStore(baseUrl: string, findProject: (id: string) => Project | undefined, referenceLinks: (id: string) => AssetDetail['referenceLinks'], context: VersionContext) {
+export function createAssetStore(baseUrl: string, findProject: (id: string) => Project | undefined, referenceLinks: (id: string) => AssetDetail['referenceLinks'], context: VersionContext, decisionsFor: (id: string) => Decision[] = () => []) {
   const records = structuredClone(assetTargetFixtures)
   const versionStore = createVersionStore(baseUrl, records, findProject, context)
   const events: z.infer<typeof ActivityEventSchema>[] = []
@@ -13,7 +13,7 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
   function invalid(request: Request, result: z.ZodSafeParseError<unknown>) { return error(request, 400, 'VALIDATION_ERROR', 'Check the asset fields.', result.error.issues.map(issue => ({ path: `body.${issue.path.join('.')}`, message: issue.message }))) }
   async function body(request: Request) { try { return await request.json() as unknown } catch { return null } }
   function find(request: Request, id: unknown) { if (!UUIDSchema.safeParse(id).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid asset identifier.'); return records.find(value => value.asset.id === id) ?? error(request, 404, 'NOT_FOUND', 'Asset not found.') }
-  function detail(record: typeof records[number]) { return AssetDetailSchema.parse({ ...record.asset, versions: record.versions, referenceLinks: referenceLinks(record.asset.id), recentDecisions: [] }) }
+  function detail(record: typeof records[number]) { return AssetDetailSchema.parse({ ...record.asset, versions: record.versions, referenceLinks: referenceLinks(record.asset.id), recentDecisions: decisionsFor(record.asset.id).slice(0, 5) }) }
   function audit(request: Request, record: typeof records[number], eventType: string) { events.push(ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: record.asset.projectId, actor: findProject(record.asset.projectId)?.owner ?? null, eventType, entityType: 'ASSET', entityId: record.asset.id, summary: `${eventType === 'ASSET_CREATED' ? 'Created' : 'Updated'} ${record.asset.title}.`, metadata: {}, requestId: headers(request)['X-Request-Id'], createdAt: new Date().toISOString() })) }
   function page<T extends { id: string }>(request: Request, schema: z.ZodType<T>, values: T[]) {
     const query = new URL(request.url).searchParams; const limit = Number(query.get('limit') ?? 25); const cursor = query.get('cursor'); const index = cursor ? values.findIndex(value => `asset:${value.id}` === cursor) : -1

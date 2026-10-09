@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { z } from 'zod'
-import { ApiResponseSchema, ApiListSchema, HealthStatusSchema, ProjectSchema, ProjectSummarySchema, BriefRevisionSchema, DirectionSchema, DirectionRevisionSchema, ReferenceSchema, AssetSchema, AssetDetailSchema, AssetVersionSchema, ImpactAssessmentSchema } from '../packages/contracts/src/index.ts'
+import { ApiResponseSchema, ApiListSchema, HealthStatusSchema, ProjectSchema, ProjectSummarySchema, BriefRevisionSchema, DirectionSchema, DirectionRevisionSchema, ReferenceSchema, AssetSchema, AssetDetailSchema, AssetVersionSchema, ImpactAssessmentSchema, DecisionSchema } from '../packages/contracts/src/index.ts'
 const base = 'https://api.solit.my.id/api/v1'
 async function read<T>(request: APIRequestContext, path: string, schema: z.ZodType<T>): Promise<T> {
   const response = await request.get(base + path, { headers: { 'X-Request-Id': crypto.randomUUID() } })
@@ -20,10 +20,12 @@ test('deployed backend supports completed frontend features through real browser
   await read(request, `${root}/references`, ApiListSchema(ReferenceSchema))
   const assets = await read(request, `${root}/assets`, ApiListSchema(AssetSchema))
   for (const asset of assets.data.slice(0, 4)) { await read(request, `/assets/${asset.id}`, ApiResponseSchema(AssetDetailSchema)); if (asset.latestVersion) await read(request, `/asset-versions/${asset.latestVersion.id}`, ApiResponseSchema(AssetVersionSchema)) }
+  await read(request, `${root}/decisions?currentOnly=false&sort=createdAt:desc`, ApiListSchema(DecisionSchema))
   const assessments = await read(request, `${root}/impact-assessments`, ApiListSchema(ImpactAssessmentSchema)); if (assessments.data.length) await read(request, `/impact-assessments/${assessments.data[0].id}`, ApiResponseSchema(ImpactAssessmentSchema))
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message))
-  await page.goto('/#/projects'); await expect(page.getByText('Backend API mode', { exact: true })).toBeVisible(); await expect(page.getByRole('heading', { name: project.name })).toBeVisible()
-  for (const [suffix, heading] of [['', project.name], ['/brief', 'Brief'], ['/directions', 'Creative directions'], ['/references', 'Reference Board'], ['/assets', 'Asset Library'], ['/impact', 'Impact Assessment & Impact Map']]) {
+  const browserHealth = page.waitForResponse(response => response.url() === `${base}/health` && response.ok())
+  await page.goto('/#/projects'); await browserHealth; await expect(page.getByText('Backend API mode', { exact: true })).toBeVisible(); await expect(page.getByRole('heading', { name: project.name })).toBeVisible()
+  for (const [suffix, heading] of [['', project.name], ['/brief', 'Brief'], ['/directions', 'Creative directions'], ['/references', 'Reference Board'], ['/assets', 'Asset Library'], ['/impact', 'Impact Assessment & Impact Map'], ['/decisions', 'Human decisions']]) {
     await page.goto(`/#${root}${suffix}`)
     await expect(page.getByRole('heading', { name: heading, exact: true })).toBeVisible()
     // Await the feature's list/context requests before checking for an error state.

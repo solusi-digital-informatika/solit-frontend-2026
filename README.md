@@ -133,8 +133,14 @@ be cancelled. No mutation is retried automatically.
 The mock provider completes inline with a visible Simulated label and no image
 inspection. Cold Industrial to Warm Organic reproduces the documented Solara
 outcomes; other scopes conservatively require human review. This is a demo
-fixture, not a general compatibility engine. Human decisions and overrides are
-the next feature.
+fixture, not a general compatibility engine. Human decisions and overrides are available on completed assessment items.
+Accept, override, dismiss or defer with a recorded rationale and selected next
+action. New decisions supersede earlier records without changing the original
+recommendation or asset/version approvals and pins. Inspect full/current-only
+history within the assessment or through View decisions on Project Home; filter
+by type and exact record IDs. Unconfirmed saves preserve the draft and never
+retry automatically. Deferred items remain unresolved. Collections and review
+are the next feature.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:
