@@ -139,8 +139,16 @@ action. New decisions supersede earlier records without changing the original
 recommendation or asset/version approvals and pins. Inspect full/current-only
 history within the assessment or through View decisions on Project Home; filter
 by type and exact record IDs. Unconfirmed saves preserve the draft and never
-retry automatically. Deferred items remain unresolved. Collections and review
-are the next feature.
+retry automatically. Deferred items remain unresolved.
+
+Collections & Review is available through View collections on Project Home.
+Create collections with exact version pins, inspect revisions and newer-version
+indicators, and create drafts that copy the original pins. Draft items support
+ordering, notes, removal and explicit same-asset version replacement with a
+rationale. Submit for review, approve or request changes/reject with recorded
+comments. Approved revisions freeze their pins; later approval supersedes the
+previous revision without changing its history or approving asset versions.
+Collection metadata supports conflict comparison and archive/restore.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:

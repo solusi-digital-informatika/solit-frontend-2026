@@ -1,3 +1,4 @@
+import { CollectionsPage } from '../collections/CollectionsPage'
 import { DecisionsPage } from '../decisions/DecisionsPage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApiClientError, createIntentKey, type ApiClient } from '../../lib/api/client'
@@ -43,7 +44,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   const generation = useRef(0)
   const nameInput = useRef<HTMLInputElement>(null)
   const createButton = useRef<HTMLButtonElement>(null)
-  const route = /^#\/projects\/([^/]+)(?:\/(brief|directions|references|assets|impact|decisions)(?:\/([^/]+)(?:\/versions\/([^/]+))?)?)?$/.exec(hash)
+  const route = /^#\/projects\/([^/]+)(?:\/(brief|directions|references|assets|impact|decisions|collections)(?:\/([^/]+)(?:\/(versions|revisions)\/([^/]+))?)?)?$/.exec(hash)
   const projectId = route?.[1] ?? null
   const briefRoute = route?.[2] === 'brief'
   const directionsRoute = route?.[2] === 'directions'
@@ -91,7 +92,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   return <section className="projects" aria-label={c.heading}>
     {isMockApi && <p className="mock-notice">{c.mock}</p>}
     {notice && <p role="status">{notice}</p>}
-    {projectId ? route?.[2] === 'decisions' ? <DecisionsPage key={projectId} client={client} projectId={projectId} /> : route?.[2] === 'impact' ? <ImpactPage key={projectId} client={client} projectId={projectId} assessmentId={route?.[3]} /> : route?.[2] === 'assets' ? <AssetLibrary key={projectId} client={client} projectId={projectId} assetId={route?.[3]} versionId={route?.[4]} /> : route?.[2] === 'references' ? <ReferenceBoard key={projectId} client={client} projectId={projectId} /> : briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : directionsRoute ? <DirectionsPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
+    {projectId ? route?.[2] === 'collections' ? <CollectionsPage key={projectId} client={client} projectId={projectId} collectionId={route?.[3]} revisionId={route?.[4] === 'revisions' ? route?.[5] : undefined} /> : route?.[2] === 'decisions' ? <DecisionsPage key={projectId} client={client} projectId={projectId} /> : route?.[2] === 'impact' ? <ImpactPage key={projectId} client={client} projectId={projectId} assessmentId={route?.[3]} /> : route?.[2] === 'assets' ? <AssetLibrary key={projectId} client={client} projectId={projectId} assetId={route?.[3]} versionId={route?.[4] === 'versions' ? route?.[5] : undefined} /> : route?.[2] === 'references' ? <ReferenceBoard key={projectId} client={client} projectId={projectId} /> : briefRoute ? <BriefPage key={projectId} client={client} projectId={projectId} /> : directionsRoute ? <DirectionsPage key={projectId} client={client} projectId={projectId} /> : <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
       <div className="projects-heading"><div><h2>{c.heading}</h2><p>{c.intro}</p></div><button ref={createButton} type="button" disabled={saving} onClick={() => { setFormOpen(true); setFormError(null); setNameError(''); intent.current = createIntentKey() }}>{c.create}</button></div>
       {formOpen && <form className="project-form" onSubmit={create} aria-label={c.create}>
         <p>{c.blank}</p><label htmlFor="project-name">{c.name}</label><input ref={nameInput} id="project-name" disabled={saving} value={name} maxLength={160} aria-invalid={Boolean(nameError || formError?.details.some(value => value.path === 'body.name'))} aria-describedby="project-name-error" onChange={event => { setName(event.target.value); intent.current = createIntentKey() }} />

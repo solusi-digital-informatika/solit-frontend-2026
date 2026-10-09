@@ -69,6 +69,7 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
     }),
   ]
   return { handlers, events,
+    versions: (id: string) => versionStore.all().filter(value => value.assetId === id),
     version: (id: string) => versionStore.all().find(value => value.id === id),
     latestVersions: (projectId: string) => versionStore.all().filter(version => version.isLatest && records.some(record => record.asset.id === version.assetId && record.asset.projectId === projectId && !record.asset.archivedAt)).map(version => ({ version, asset: records.find(record => record.asset.id === version.assetId)!.asset })),
     asset: (id: string) => records.find(record => record.asset.id === id)?.asset,

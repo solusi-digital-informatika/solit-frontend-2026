@@ -7,6 +7,7 @@ import { createBriefStore } from './briefs'
 import { createDirectionStore } from './directions'
 import { createReferenceStore } from './references'
 import { createAssetStore } from './assets'
+import { createCollectionStore } from './collections'
 import { createAssessmentStore } from './assessments'
 import { decisionHistoryHandler } from './decisionHistory'
 import { assessmentDiff } from './assessmentDiff'
@@ -17,9 +18,10 @@ export function createProjectHandlers(baseUrl: string) {
   const intents = new Map<string, { body: string; project: Project }>()
   const directionStore = createDirectionStore(baseUrl, id => projects.find(project => project.id === id))
   const briefStore = createBriefStore(baseUrl, id => projects.find(project => project.id === id))
-  const assetStore = createAssetStore(baseUrl, id => projects.find(project => project.id === id), id => referenceStore.linksToAsset(id), { directionProject: id => directionStore.revisionProject(id), directionFor: id => directionStore.revisionDirection(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), referenceProject: id => referenceStore.projectFor(id) }, id => assessmentStore.decisions.filter(decision => decision.assetId === id))
+  const assetStore = createAssetStore(baseUrl, id => projects.find(project => project.id === id), id => referenceStore.linksToAsset(id), { directionProject: id => directionStore.revisionProject(id), directionFor: id => directionStore.revisionDirection(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), referenceProject: id => referenceStore.projectFor(id), pinsFor: id => collectionStore.pinsFor(id) }, id => [...assessmentStore.decisions, ...collectionStore.decisions].filter(decision => decision.assetId === id))
   const referenceStore = createReferenceStore(baseUrl, id => projects.find(project => project.id === id), id => directionStore.revisionProject(id), (type, id) => assetStore.projectFor(type, id))
   const assessmentStore = createAssessmentStore(baseUrl, id => projects.find(project => project.id === id), { directionProject: id => directionStore.revisionProject(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), version: id => assetStore.version(id), asset: id => assetStore.asset(id), latestVersions: id => assetStore.latestVersions(id), diff: (from, to) => assessmentDiff(from ? directionStore.revision(from) : undefined, directionStore.revision(to)!) })
+  const collectionStore = createCollectionStore(baseUrl, id => projects.find(project => project.id === id), { version: id => assetStore.version(id), asset: id => assetStore.asset(id), versions: id => assetStore.versions(id) })
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'IDEMPOTENCY_KEY_REUSED', message: string, details: { path: string; message: string }[] = []) {
     const requestId = request.headers.get('X-Request-Id') ?? crypto.randomUUID()
     return HttpResponse.json(ApiErrorSchema.parse({ error: { code, message, requestId, details } }), { status, headers: { 'X-Request-Id': requestId } })
@@ -31,13 +33,14 @@ export function createProjectHandlers(baseUrl: string) {
     ...directionStore.handlers,
     ...briefStore.handlers,
     ...assessmentStore.handlers,
-    decisionHistoryHandler(baseUrl, id => projects.some(project => project.id === id), () => [...assessmentStore.decisions, ...directionStore.decisions], assessmentStore.itemAssessment),
+    ...collectionStore.handlers,
+    decisionHistoryHandler(baseUrl, id => projects.some(project => project.id === id), () => [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions], assessmentStore.itemAssessment),
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)
       if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
       const latest = assessmentStore.latest(project.id)
-      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: { ...summaryForProject(project), unresolvedRecommendationCount: assessmentStore.unresolved(project.id), latestAssessment: latest ? { id: latest.id, status: latest.status, startedAt: latest.startedAt, isSimulated: latest.isSimulated } : null, assetCounts: assetStore.counts(project.id), activeDirection: directionStore.activeContext(project), recentDecisions: [...assessmentStore.decisions, ...directionStore.decisions].filter(value => value.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5) } }), { headers: headers(request) })
+      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: { ...summaryForProject(project), unresolvedRecommendationCount: assessmentStore.unresolved(project.id), staleCollectionItemCount: collectionStore.staleCount(project.id), latestAssessment: latest ? { id: latest.id, status: latest.status, startedAt: latest.startedAt, isSimulated: latest.isSimulated } : null, assetCounts: assetStore.counts(project.id), activeDirection: directionStore.activeContext(project), recentDecisions: [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions].filter(value => value.projectId === project.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5) } }), { headers: headers(request) })
     }),
     http.get(`${baseUrl}/projects`, ({ request }) => {
       const query = new URL(request.url).searchParams
