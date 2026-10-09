@@ -1,0 +1,6 @@
+﻿.welcome { max-width: 760px; margin: 0 auto; padding: clamp(32px, 8vw, 96px) 24px; }
+.eyebrow { font-weight: 700; letter-spacing: .08em; }
+h1 { font-size: clamp(36px, 7vw, 64px); line-height: 1.12; letter-spacing: -.04em; margin: 32px 0 24px; }
+.description { max-width: 560px; font-size: 20px; color: var(--text-secondary); }
+.setup-status { display: inline-block; margin-top: 32px; padding: 10px 16px; background: var(--mint); border-radius: 12px; font-weight: 600; }
+.note { max-width: 560px; color: var(--text-secondary); }
