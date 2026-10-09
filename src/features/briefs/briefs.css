@@ -1,0 +1,22 @@
+.brief-page { margin-top: 24px; }
+.brief-page h2 { margin-top: 24px; }
+.brief-layout { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 20px; margin-top: 24px; }
+.brief-detail, .brief-form { background: white; border: 1px solid var(--border); padding: 24px; border-radius: 14px; overflow-wrap: anywhere; }
+.brief-history ol { list-style: none; padding: 0; }
+.brief-history li { margin-bottom: 16px; }
+.brief-history button[aria-current] { background: #d8f3e8; border-color: #27614c; }
+.brief-version { font-weight: 600; }
+.brief-detail h3 { font-size: 24px; }
+.brief-detail h4 { margin-bottom: 8px; }
+.brief-source, .preserve-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
+.brief-form { margin-top: 24px; }
+.brief-form fieldset { border: 0; padding: 0; min-width: 0; }
+.brief-form .attribute-group { border: 1px solid var(--border); padding: 16px; border-radius: 8px; margin: 24px 0; }
+.brief-field { margin: 16px 0; }
+.brief-form textarea { min-height: 80px; }
+.field-error { color: #912e24; margin: 4px 0; }
+.attribute-row { padding: 16px 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.brief-form .attribute-checkbox { flex-direction: row; align-items: center; margin: 12px 0; }
+.attribute-checkbox input { width: auto; min-height: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+@media (max-width: 600px) { .brief-layout { grid-template-columns: 1fr; } }

@@ -1,0 +1,15 @@
+export const briefCopy = {
+  heading: 'Brief', back: 'Project overview', loading: 'Loading brief…', empty: 'No brief yet. Capture the purpose and requirements of this project.',
+  first: 'Create brief', revise: 'Create new revision', history: 'Revision history', revision: 'Revision', latest: 'Latest', historical: 'Historical revision',
+  title: 'Brief title', objective: 'Objective', targetAudience: 'Target audience', deliverables: 'Deliverables', constraints: 'Constraints', acceptanceCriteria: 'Acceptance criteria', sourceText: 'Source text / Markdown', changeSummary: 'Change summary',
+  requirements: 'Required attributes', forbiddenAttributes: 'Forbidden attributes',
+  label: 'Attribute label', category: 'Category', value: 'Attribute value', hard: 'Hard constraint', soft: 'Guideline', add: 'Add attribute', remove: 'Remove attribute',
+  categories: { PALETTE: 'Palette', LIGHTING: 'Lighting', COMPOSITION: 'Composition', MATERIAL: 'Material', MOOD: 'Mood', TYPOGRAPHY: 'Typography', SUBJECT: 'Subject', OTHER: 'Other' },
+  unknownCategory: 'Unknown category', none: 'Not recorded', lines: 'Enter one item per line.',
+  save: 'Save new revision', saving: 'Saving…', cancel: 'Cancel', saved: 'New brief revision saved. Earlier revisions are unchanged.',
+  immutable: 'Saved revisions remain unchanged. Changes create a new revision.',
+  retry: 'Try again', requestId: 'Request ID', loadMore: 'Load older revisions', loadingRevision: 'Loading revision…',
+  validation: 'Check the fields below.', required: 'This field is required.', summaryRequired: 'Explain what changed from the previous revision.',
+  readOnly: 'Your role can view briefs but cannot create revisions.', offline: 'You are offline. Reconnect before saving to the backend.',
+  uncertainSave: 'This request has no idempotency support. If the connection failed during saving, check revision history before submitting again.',
+} as const

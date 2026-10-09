@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, type Project } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
 import { summaryForProject } from './projectSummary'
+import { createBriefHandlers } from './briefs'
 
 const inputSchema = z.object({ name: z.string().trim().min(1).max(160), description: z.string().trim().optional(), template: z.enum(['BLANK', 'DEMO_SOLARA']) })
 export function createProjectHandlers(baseUrl: string) {
@@ -14,6 +15,7 @@ export function createProjectHandlers(baseUrl: string) {
   }
   function headers(request: Request) { return { 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() } }
   return [
+    ...createBriefHandlers(baseUrl, id => projects.find(project => project.id === id)),
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)

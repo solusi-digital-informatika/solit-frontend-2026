@@ -26,6 +26,7 @@ Mock mode uses MSW to intercept HTTP requests before React starts. The page labe
 mock mode explicitly. Mock endpoints include GET /health, GET/POST /projects,
 and GET /projects/:id. Solara uses the canonical seed IDs. Creation offers blank
 projects; full demo cloning arrives with the associated domain fixtures.
+Brief mocks support revision list/latest/detail/create with immutable history.
 Unimplemented API calls in mock mode fail rather than reach a real backend.
 The service worker is checked in at public/mockServiceWorker.js.
 
@@ -71,6 +72,15 @@ submissions. Other screens, persistence, the assessment workflow, and real backe
 integration are not implemented yet. The browser smoke test checks opening Solara,
 focus navigation, and viewport overflow at desktop and phone widths using installed
 Microsoft Edge. The full product E2E scenario arrives with subsequent features.
+
+Brief is available from Project Home via View brief. Users can inspect the latest
+brief and older revisions, create the first brief, or save a new revision with a
+change summary. Forms include structured required/forbidden attributes, lists,
+and source text. Saved revisions are never edited in place. Markdown displays as
+plain text. Viewer/unknown roles see read-only controls. Failed forms retain input.
+Brief writes have no contract idempotency support; after a network failure, check
+history before resubmitting. The browser test verifies old brief content remains
+unchanged after creating a revision, at desktop and phone widths.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:

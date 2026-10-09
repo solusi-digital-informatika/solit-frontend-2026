@@ -16,6 +16,12 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Project Home uses only GET /projects/:id/summary. Counts and stale/review indicators are displayed verbatim; the mock response fixture has 4 assets (3 APPROVED, 1 DRAFT), no assessment, no recent decisions, and active Cold Industrial revision 1.
 - Seed palette hex codes and unspecified direction attributes remain null/empty; no inferred metadata is presented as confirmed source data.
 - Blank project summaries contain no active direction, assets, assessment, or decisions.
+- Brief handlers cover list/latest/detail/create and cursor pagination. The seed brief uses ID …0020; its unspecified wording is fictional demo copy, not an inferred client brief.
+- Brief creation appends an immutable revision. UI sends every documented input field, preserves requirement IDs, and generates UUIDs for new attributes; the mock also assigns IDs when omitted.
+- Revision >1 requires a change summary. A new revision form always starts from the API's latest brief, even when a historical revision is being viewed.
+- Brief POST has no documented idempotency support, so the client prevents simultaneous submissions but never automatically retries ambiguous failed writes. The form directs users to check history after network/timeout failure.
+- Source Markdown is displayed as plain text. No extraction, HTML rendering, or AI analysis occurs.
+- Brief creation controls require a known OWNER/REVIEWER/EDITOR role; unknown roles and VIEWER are read-only.
 - Schema exports use the documented type name plus Schema (e.g. ProjectSchema) and inferred type Project.
 - API requests time out after 15 seconds unless overridden; mutations are never automatically retried.
 
