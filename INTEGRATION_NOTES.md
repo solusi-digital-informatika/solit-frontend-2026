@@ -29,7 +29,14 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Mock diff compares recorded attribute groups only, without AI interpretation. The UI displays the server's differences and does not compute them.
 - Direction history is read through cursor pagination. Forms preserve prior requirement IDs, source attributes, and nullable metadata; clones receive new direction/revision identities.
 - Direction/revision/activation POST has no contract idempotency support. In-flight duplicate submissions are prevented; failed writes are never automatically retried.
-- Asset/version/collection handlers are not implemented yet. Their direction-change invariants must be rechecked once those feature slices and the real backend are available; current tests verify brief and seeded count stability.
+- Asset/version writes and collection handlers are not implemented yet. Their direction-change invariants must be rechecked once those feature slices and the real backend are available; current tests verify brief and seeded count stability.
+- Reference Board uses #/projects/:projectId/references and the reference list/detail/metadata/attribute/link endpoints in section 6.7. It supports server filters, cursor pagination, URL registration, editing, archive/restore, and links to exact direction revisions, assets, and asset versions.
+- Reference fixtures use section 9 IDs …0080/…0081. The local JPGs are procedural demo textures created for this repository, with visible source and permission notes; they are not third-party photography. PUBLIC_URL registration never fetches the source or creates an image preview.
+- File upload/storage integration and P1 AI analysis are deferred; the registration form explicitly describes the supported URL flow. AI-inferred attributes returned by the backend retain their origin and show their separate review status.
+- Reference metadata PATCH uses expectedUpdatedAt. Conflict handling retains the draft and loads the latest metadata for comparison before explicit resubmission. Attribute/link writes are confirmed by the API before display; mutations are never automatically retried.
+- Reference editing requires a known OWNER/REVIEWER/EDITOR role; unknown roles and VIEWER are read-only. Real authorization remains the backend's responsibility.
+- Read-only Solara asset and version-summary fixtures (…0050–…0053, …0060–…0064) enable reference linking ahead of #7. These handlers implement only the listing needed by the selector; full asset filters, metadata, version detail, storage and mutations belong to #7/#8. Linking does not mutate asset or direction records.
+- Reference mutations append canonical mock activity events in memory. The activity feed endpoint and screen remain a later feature.
 - Schema exports use the documented type name plus Schema (e.g. ProjectSchema) and inferred type Project.
 - API requests time out after 15 seconds unless overridden; mutations are never automatically retried.
 
