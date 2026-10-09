@@ -1,0 +1,17 @@
+export const homeCopy = {
+  opened: 'Project opened', overview: 'Project overview', loading: 'Loading project overview…',
+  activeDirection: 'Active creative direction', noDirection: 'No active direction yet.',
+  noDirectionHelp: 'This project is ready for its first brief and creative direction.',
+  revision: 'Revision', palette: 'Palette', lighting: 'Lighting', materials: 'Materials', mood: 'Mood',
+  noAttributes: 'Not recorded', assets: 'Total assets', unresolved: 'Unresolved recommendations', stale: 'Collection items with newer versions',
+  assetStatuses: 'Asset status breakdown', noAssets: 'No assets registered yet.',
+  assetLabels: { DRAFT: 'Draft', IN_PROGRESS: 'In progress', NEEDS_REVIEW: 'Needs review', APPROVED: 'Approved', REJECTED: 'Rejected', ARCHIVED: 'Archived' },
+  latestAssessment: 'Latest assessment', noAssessment: 'No assessment has been run yet.', simulated: 'Simulated',
+  assessmentLabels: { PENDING: 'Pending', RUNNING: 'Running', COMPLETED: 'Completed', FAILED: 'Failed', CANCELLED: 'Cancelled' }, unknownAssessment: 'Unknown assessment status',
+  decisions: 'Recent decisions', noDecisions: 'No decisions recorded yet.', unknownDecision: 'Decision recorded',
+  decisionLabels: { ACCEPT_RECOMMENDATION: 'Recommendation accepted', OVERRIDE_RECOMMENDATION: 'Recommendation overridden', DISMISS_RECOMMENDATION: 'Recommendation dismissed', DEFER_RECOMMENDATION: 'Recommendation deferred', APPROVE_VERSION: 'Version approved', REJECT_VERSION: 'Version rejected', REQUEST_REVISION: 'Revision requested', CHANGE_DIRECTION: 'Direction changed', PIN_TO_COLLECTION: 'Version pinned to collection', REPLACE_PINNED_VERSION: 'Pinned version replaced' },
+  retry: 'Try again', requestId: 'Request ID', offline: 'You are offline. Reconnect to load this project from the backend.',
+  back: 'All projects', owner: 'Owner', role: 'Your role', unknownRole: 'Unknown role', updated: 'Updated', noDescription: 'No description provided.',
+  primary: 'Review active direction', primaryEmpty: 'Review project setup',
+  next: 'Brief editing and direction management will be added in the next features.',
+} as const

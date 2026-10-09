@@ -1,7 +1,8 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, UUIDSchema, type Project } from '../../packages/contracts/src'
+import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, type Project } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
+import { summaryForProject } from './projectSummary'
 
 const inputSchema = z.object({ name: z.string().trim().min(1).max(160), description: z.string().trim().optional(), template: z.enum(['BLANK', 'DEMO_SOLARA']) })
 export function createProjectHandlers(baseUrl: string) {
@@ -13,6 +14,12 @@ export function createProjectHandlers(baseUrl: string) {
   }
   function headers(request: Request) { return { 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() } }
   return [
+    http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
+      if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
+      const project = projects.find(value => value.id === params.projectId)
+      if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
+      return HttpResponse.json(ApiResponseSchema(ProjectSummarySchema).parse({ data: summaryForProject(project) }), { headers: headers(request) })
+    }),
     http.get(`${baseUrl}/projects`, ({ request }) => {
       const query = new URL(request.url).searchParams
       const limit = Number(query.get('limit') ?? 25)

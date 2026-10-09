@@ -13,6 +13,9 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Mock project writes stay in memory until reload; list/detail navigation preserves them. The UI labels this limitation explicitly.
 - Project URLs use #/projects/:projectId so detail navigation requires no hosting rewrite.
 - Project response views accept unknown status/role strings with a generic display fallback; canonical fixtures remain strict.
+- Project Home uses only GET /projects/:id/summary. Counts and stale/review indicators are displayed verbatim; the mock response fixture has 4 assets (3 APPROVED, 1 DRAFT), no assessment, no recent decisions, and active Cold Industrial revision 1.
+- Seed palette hex codes and unspecified direction attributes remain null/empty; no inferred metadata is presented as confirmed source data.
+- Blank project summaries contain no active direction, assets, assessment, or decisions.
 - Schema exports use the documented type name plus Schema (e.g. ProjectSchema) and inferred type Project.
 - API requests time out after 15 seconds unless overridden; mutations are never automatically retried.
 
@@ -28,4 +31,5 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 
 ## Verification
 
-Run npm run test, npm run lint, npm run typecheck, and npm run build.
+Run npm run test, npm run lint, npm run typecheck, npm run build, and npm run test:e2e.
+Browser smoke tests use installed Microsoft Edge (Playwright channel msedge) at desktop and phone widths. Install Edge or adjust the test channel if it is unavailable on another machine.

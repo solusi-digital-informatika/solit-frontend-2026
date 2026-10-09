@@ -1,14 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApiClientError, createIntentKey, type ApiClient } from '../../lib/api/client'
 import { projectApi, type ProjectView } from './api'
+import { ProjectHome } from './ProjectHome'
+import { ProjectStatus } from './ProjectStatus'
+export { ProjectStatus } from './ProjectStatus'
 import { projectCopy as c } from './copy'
 import './projects.css'
 
 function asError(error: unknown) { return error instanceof ApiClientError ? error : new ApiClientError('The request failed. Please try again.', { code: 'UNKNOWN' }) }
-export function ProjectStatus({ status }: { status: string }) {
-  const label = status === 'ACTIVE' ? c.active : status === 'ARCHIVED' ? c.archived : c.unknown
-  return <span className="project-status"><span aria-hidden="true">{status === 'ACTIVE' ? '●' : status === 'ARCHIVED' ? '▣' : '?'}</span> {label}</span>
-}
 function ErrorMessage({ error, retry }: { error: ApiClientError; retry?: () => void }) {
   return <div className="project-error" role="alert"><p>{error.message}</p>{error.requestId && <p>{c.requestId}: <code>{error.requestId}</code></p>}{retry && <button type="button" onClick={retry}>{c.retry}</button>}</div>
 }
@@ -25,7 +24,6 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<ApiClientError | null>(null)
   const [attempt, setAttempt] = useState(0)
-  const [selected, setSelected] = useState<ProjectView | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -39,7 +37,6 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   const generation = useRef(0)
   const nameInput = useRef<HTMLInputElement>(null)
   const createButton = useRef<HTMLButtonElement>(null)
-  const heading = useRef<HTMLHeadingElement>(null)
   const projectId = /^#\/projects\/([^/]+)$/.exec(hash)?.[1] ?? null
   useEffect(() => {
     const update = () => { setHash(window.location.hash); setFormOpen(false); setNotice('') }
@@ -52,19 +49,14 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
     const current = ++generation.current
     pageBusy.current = false
     // oxlint-disable-next-line react/set-state-in-effect -- Reset request state when synchronizing a changed route/filter with the external API.
-    setLoadingMore(false); setLoading(true); setError(null); setSelected(null); setItems([])
-    if (projectId) {
-      api.get(projectId, controller.signal).then(({ data }) => {
-        if (!controller.signal.aborted) { setSelected(data); setLoading(false) }
-      }).catch((value: unknown) => { if (!controller.signal.aborted) { setError(asError(value)); setLoading(false) } })
-    } else {
+    setLoadingMore(false); setLoading(true); setError(null); setItems([])
+    if (!projectId) {
       api.list({ q, status: status || undefined, sort }, controller.signal).then(result => {
         if (!controller.signal.aborted && generation.current === current) { setItems(result.data); setCursor(result.page.nextCursor); setLoading(false) }
       }).catch((value: unknown) => { if (!controller.signal.aborted) { setError(asError(value)); setLoading(false) } })
     }
     return () => controller.abort()
   }, [api, projectId, q, status, sort, attempt])
-  useEffect(() => { if (selected) heading.current?.focus() }, [selected])
   async function more() {
     if (!cursor || pageBusy.current) return
     pageBusy.current = true; setLoadingMore(true); setError(null)
@@ -90,12 +82,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
   return <section className="projects" aria-label={c.heading}>
     {isMockApi && <p className="mock-notice">{c.mock}</p>}
     {notice && <p role="status">{notice}</p>}
-    {projectId ? <>
-      <a href="#/projects">← {c.back}</a>
-      {loading && <p role="status">{c.loadingProject}</p>}
-      {error && <ErrorMessage error={error} retry={() => setAttempt(value => value + 1)} />}
-      {selected && <article className="project-detail"><p className="eyebrow">{c.selected}</p><h2 ref={heading} tabIndex={-1}>{selected.name}</h2><ProjectStatus status={selected.status} /><p>{selected.description ?? c.noDescription}</p><dl><dt>{c.owner}</dt><dd>{selected.owner.displayName}</dd><dt>{c.role}</dt><dd>{['OWNER', 'REVIEWER', 'EDITOR', 'VIEWER'].includes(selected.currentUserRole) ? selected.currentUserRole : c.unknownRole}</dd><dt>{c.updated}</dt><dd><time dateTime={selected.updatedAt}>{new Date(selected.updatedAt).toLocaleString()}</time></dd></dl><p className="note">{c.next}</p></article>}
-    </> : <>
+    {projectId ? <ProjectHome key={projectId} client={client} projectId={projectId} isMockApi={isMockApi} /> : <>
       <div className="projects-heading"><div><h2>{c.heading}</h2><p>{c.intro}</p></div><button ref={createButton} type="button" disabled={saving} onClick={() => { setFormOpen(true); setFormError(null); setNameError(''); intent.current = createIntentKey() }}>{c.create}</button></div>
       {formOpen && <form className="project-form" onSubmit={create} aria-label={c.create}>
         <p>{c.blank}</p><label htmlFor="project-name">{c.name}</label><input ref={nameInput} id="project-name" disabled={saving} value={name} maxLength={160} aria-invalid={Boolean(nameError || formError?.details.some(value => value.path === 'body.name'))} aria-describedby="project-name-error" onChange={event => { setName(event.target.value); intent.current = createIntentKey() }} />

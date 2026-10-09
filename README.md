@@ -51,6 +51,7 @@ npm run test
 npm run lint
 npm run typecheck
 npm run build
+npm run test:e2e
 npm run preview
 ```
 
@@ -61,11 +62,15 @@ unknown response fields, and the boot compatibility gate.
 ## Current scope
 
 Integration foundation, project list/search/status filters/sorting, blank-project
-creation, and detail navigation are implemented. Mock writes survive navigation
+creation, and Project Home are implemented. The overview reads the summary API,
+shows the active direction and exact revision, server-provided asset/review/stale
+counts, the latest assessment (with Simulated label when applicable), and recent
+human decisions. New blank projects show empty states. Mock writes survive navigation
 and reset on reload. Creation reuses its intent key on retry and prevents duplicate
-submissions. The overview dashboard, other screens, persistence, assessment
-workflow, and real backend integration are not implemented yet. Browser visual checks and
-the full product E2E scenario are scheduled with subsequent features.
+submissions. Other screens, persistence, the assessment workflow, and real backend
+integration are not implemented yet. The browser smoke test checks opening Solara,
+focus navigation, and viewport overflow at desktop and phone widths using installed
+Microsoft Edge. The full product E2E scenario arrives with subsequent features.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:
