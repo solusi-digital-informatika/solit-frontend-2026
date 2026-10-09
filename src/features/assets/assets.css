@@ -1,0 +1,18 @@
+.asset-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr)); gap:20px; list-style:none; padding:0; }
+.asset-card { background:white; border:1px solid var(--border); border-radius:16px; overflow:hidden; }
+.asset-card-content { padding:20px; overflow-wrap:anywhere; }
+.asset-preview { aspect-ratio:8/5; background:#e8edf5; display:grid; place-items:center; overflow:hidden; }
+.asset-preview img { width:100%; height:100%; object-fit:cover; }
+.asset-preview p { padding:16px; color:var(--text-secondary); }
+.asset-status { display:inline-block; padding:3px 8px; border-radius:6px; background:var(--lavender); font-size:14px; }
+.asset-status.approved { background:var(--mint); }.asset-status.needs_review { background:#fff0bd; }.asset-status.rejected { background:#ffe1d2; }.asset-status.archived,.asset-status.superseded,.asset-status.unknown { background:#eeeaf2; }
+.asset-filters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:24px 0; }
+.asset-filters .asset-checkbox { flex-direction:row; align-items:center; }.asset-checkbox input { width:20px; min-height:20px; }
+.asset-form { background:#f1eef9; border-radius:16px; padding:24px; margin:20px 0; }
+.asset-form fieldset { border:0; padding:0; min-width:0; }.asset-form label { margin-top:16px; }
+.asset-detail { max-width:60rem; margin:24px auto; overflow-wrap:anywhere; }.asset-detail>.asset-preview { max-width:42rem; border-radius:16px; margin:20px 0; }
+.asset-metadata { display:grid; grid-template-columns:minmax(8rem,auto) minmax(0,1fr); gap:12px; margin:24px 0; }.asset-metadata dd { margin:0; }
+.asset-version-list { padding-left:24px; }.asset-version-list li { margin:16px 0; }.asset-version-list code { word-break:break-all; font-size:13px; }
+.asset-reference-list { list-style:none; padding:0; }.asset-reference-list li { margin:16px 0; }.asset-rights { background:#fff0bd; border-radius:8px; padding:12px; }
+.asset-loading>div { aspect-ratio:8/5; max-width:24rem; background:#e8edf5; border-radius:16px; }
+@media(max-width:650px) { .asset-filters { grid-template-columns:1fr; }.asset-metadata { grid-template-columns:1fr; }.asset-form { padding:16px; }.asset-detail .project-actions { flex-wrap:wrap; } }

@@ -92,10 +92,25 @@ shows the activation decision. Comparisons are deterministic and network-local
 in mock mode; no AI is called. Browser tests cover revision creation, comparison,
 activation dialog Escape/focus behavior, and Project Home synchronization.
 
+Reference Board supports URL registration, permission notes, attributes with
+provenance/review status, metadata conflicts, archive/restore, and links to exact
+direction revisions, assets and asset versions. Sources are never fetched during
+registration. Upload and AI analysis are deferred.
+
+Asset Library is available through View assets on Project Home. Search/filter/sort
+the asset grid, inspect detail and newest-first version summaries, create logical
+asset records, edit metadata and logical statuses, and archive/restore without
+altering existing versions. Asset creation uses an idempotency key. Linked
+reference notes and rights are read from the API; Project Home counts reflect
+mock asset mutations. Full version content, lineage, creation, file handling and
+approval decisions are scheduled for the next feature. Local demo images are
+procedurally drawn placeholders. Browser tests cover these workflows at desktop
+and phone widths.
+
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:
 INTEGRATION_NOTES.md. Shared Zod schemas: packages/contracts/src/index.ts.
-English UI copy is centralized in src/copy/en.ts.
+English UI copy is centralized in src/copy/en.ts and feature copy modules.
 
 ## Git workflow
 

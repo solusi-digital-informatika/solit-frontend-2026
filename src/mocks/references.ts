@@ -2,11 +2,10 @@ import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
 import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ReferenceSchema, ReferenceAttributeSchema, ReferenceLinkInputSchema, AttributeCategorySchema, AttributeReviewStatusSchema, ReferenceSourceTypeSchema, ActivityEventSchema, UUIDSchema, type Project, type Reference, type ReferenceLink } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
-import { assetTargetFixtures } from './assetFixtures'
 export const referenceFixtures = ['steel', 'timber'].map((name, index) => ReferenceSchema.parse({
   id: `00000000-0000-4000-8000-00000000008${index}`, projectId: solaraProjectFixture.id, title: index ? 'Warm timber studio' : 'Brushed steel macro', description: 'Procedural sample texture for the fictional Solara demo.', sourceType: 'DEMO_ASSET', sourceUrl: `/demo-assets/ref-${name}.jpg`, usageRightsNote: 'Procedural demo placeholder created for Branchframe; not a third-party reference.', tags: [index ? 'organic' : 'industrial'], fileUrl: `/demo-assets/ref-${name}.jpg`, thumbnailUrl: `/demo-assets/ref-${name}.jpg`, attributes: [], links: [{ targetType: 'DIRECTION_REVISION', targetId: index ? '00000000-0000-4000-8000-000000000041' : '00000000-0000-4000-8000-000000000031', relationshipType: null, usageNote: 'Sample material inspiration.' }], addedBy: solaraProjectFixture.owner, createdAt: solaraProjectFixture.createdAt, updatedAt: solaraProjectFixture.updatedAt, archivedAt: null,
 }))
-export function createReferenceHandlers(baseUrl: string, findProject: (id: string) => Project | undefined, revisionProject: (id: string) => string | undefined) {
+export function createReferenceStore(baseUrl: string, findProject: (id: string) => Project | undefined, revisionProject: (id: string) => string | undefined, assetProject: (type: string, id: string) => string | undefined) {
   const references: Reference[] = structuredClone(referenceFixtures)
   const events: z.infer<typeof ActivityEventSchema>[] = []
   const headers = (request: Request) => ({ 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() })
@@ -15,14 +14,14 @@ export function createReferenceHandlers(baseUrl: string, findProject: (id: strin
   function invalid(request: Request, result: z.ZodSafeParseError<unknown>) { return error(request, 400, 'VALIDATION_ERROR', 'Check the reference fields.', result.error.issues.map(issue => ({ path: `body.${issue.path.join('.')}`, message: issue.message }))) }
   const text = z.string().trim(); const hex = text.regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
   const attributeInput = z.object({ attributeType: AttributeCategorySchema, value: z.object({ text: text.min(1), hex }) })
-  function linkProject(link: ReferenceLink) { if (link.targetType === 'DIRECTION_REVISION') return revisionProject(link.targetId); const item = assetTargetFixtures.find(value => link.targetType === 'ASSET' ? value.asset.id === link.targetId : value.versions.some(version => version.id === link.targetId)); return item?.asset.projectId }
+  function linkProject(link: ReferenceLink) { return link.targetType === 'DIRECTION_REVISION' ? revisionProject(link.targetId) : assetProject(link.targetType, link.targetId) }
   function checkLink(request: Request, projectId: string, link: ReferenceLink) { const targetProject = linkProject(link); return !targetProject ? error(request, 404, 'NOT_FOUND', 'Link target not found.') : targetProject !== projectId ? error(request, 422, 'CROSS_PROJECT_REFERENCE', 'Link target belongs to another project.') : null }
   function normalizedLink(input: z.infer<typeof ReferenceLinkInputSchema>): ReferenceLink { return { ...input, relationshipType: input.targetType === 'ASSET' ? input.relationshipType || 'INSPIRATION' : null, usageNote: input.usageNote?.trim() || null } }
   function touch(reference: Reference) { reference.updatedAt = new Date(Math.max(Date.now(), Date.parse(reference.updatedAt) + 1)).toISOString() }
   function audit(request: Request, reference: Reference, eventType: string, summary: string) { events.push(ActivityEventSchema.parse({ id: crypto.randomUUID(), projectId: reference.projectId, actor: reference.addedBy, eventType, entityType: 'REFERENCE', entityId: reference.id, summary, metadata: {}, requestId: headers(request)['X-Request-Id'], createdAt: new Date().toISOString() })) }
   function response(request: Request, reference: Reference, status = 200) { return HttpResponse.json(ApiResponseSchema(ReferenceSchema).parse({ data: reference }), { status, headers: headers(request) }) }
   function find(request: Request, id: unknown) { if (!UUIDSchema.safeParse(id).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid reference identifier.'); return references.find(value => value.id === id) ?? error(request, 404, 'NOT_FOUND', 'Reference not found.') }
-  return [
+  const handlers = [
     http.get(`${baseUrl}/projects/:projectId/references`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       if (!findProject(String(params.projectId))) return error(request, 404, 'NOT_FOUND', 'Project not found.')
@@ -90,4 +89,5 @@ export function createReferenceHandlers(baseUrl: string, findProject: (id: strin
       reference.links = reference.links.filter(value => value.targetType !== targetType.data || value.targetId !== targetId.data); touch(reference); audit(request, reference, 'REFERENCE_UPDATED', 'Removed a reference link.'); return response(request, reference)
     }),
   ]
+  return { handlers, linksToAsset(id: string) { return references.flatMap(reference => reference.links.filter(link => link.targetType === 'ASSET' && link.targetId === id).map(link => ({ referenceId: reference.id, relationshipType: link.relationshipType ?? 'INSPIRATION', note: link.usageNote }))) } }
 }
