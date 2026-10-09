@@ -47,7 +47,7 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - No membership-list endpoint is contracted. Owner assignment offers the known project owner, preserves any current owner on edits, and filters by owners observed in loaded asset records. Clearing an existing owner is withheld because nullable ownerUserId is not specified by this contract.
 - Asset detail shows newest-first version summaries, backend-provided decisions and linked reference usage/rights notes. Mock asset create/edit actions append canonical activity events in memory; the activity endpoint is still deferred.
 - Versioning implements GET /asset-versions/:id and POST /assets/:id/versions, plus atomic initialVersion support in the mock asset-creation endpoint. The UI offers new-version creation after creating the logical asset; it does not combine those forms.
-- Version detail displays exact IDs, prompt/model/provider metadata, recorded attributes, typed generation settings, file metadata, source/derived lineage, version references and exact collection revision pins. Unknown generation metadata remains null/empty rather than inventing a provider or prompt. Seed recorded attributes remain unspecified/empty; the deterministic impact-assessment fixture will be completed in #9 against section 9.3.
+- Version detail displays exact IDs, prompt/model/provider metadata, recorded attributes, typed generation settings, file metadata, source/derived lineage, version references and exact collection revision pins. Unknown generation metadata remains null/empty rather than inventing a provider or prompt. Seed recorded attributes use authored fictional demo values for the #9 scenario described below.
 - Seed full-version fixtures preserve Hero v2's source Hero v1 and section 9 collection pins (Hero v2, Close-up v1, Factory Background v1). pinnedIn is a seeded projection in the version mock; collection DTOs/endpoints remain a later feature. Tests assert these version pin projections survive creation; the complete collection invariant requires collection integration later.
 - Creating a version appends a sequential number, updates the logical asset's latestVersion/count, and leaves prior content, approval states, and pins untouched. isLatest and lineage derivedVersions are current server projections and can change without altering old content. The mock resolves omitted direction/brief IDs at save time; explicit null removes the association.
 - Same-asset lineage and same-project direction/brief/reference associations are checked before mutation. An invalid initialVersion leaves no partial asset record. Version POST uses stable per-intent idempotency keys, scoped by asset in the mock; changed bodies get new keys and no write is automatically retried.
@@ -68,6 +68,14 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 - Seed recordedAttributes now contain authored fictional metadata sufficient for that documented scenario. They are explicitly described as demo attributes rather than extracted observations. Factory lighting/mood remain missing. Existing provider/prompt fields remain null and procedural demo files remain unchanged.
 - Project Home latestAssessment and unresolvedRecommendationCount are server-owned mock projections. The latter sums unresolved items across completed runs, preserving distinct historical recommendations. Human decisions/overrides and their effect on these projections are feature #10; assessment runs do not activate direction, change version status/content or move approved collection pins.
 
+## Deployed backend integration
+
+- API base is https://api.solit.my.id/api/v1; documentation is https://api.solit.my.id/docs. Local `.env` and `.env.example` now select live mode. Missing base configuration defaults to this deployed API; the mock toggle still works explicitly. `.env` remains ignored by Git.
+- Health reports API/contract 1.0.0 and authMode=demo. No new login or browser provider key is required by the published OpenAPI. Frontend retains credentialed requests, runtime validation, request IDs and the major-version gate. Real authorization remains server-owned.
+- CORS preflight accepts http://localhost:5173 with credentials, X-Request-Id and Idempotency-Key; http://127.0.0.1:5173 is rejected. Vite defaults to localhost and strict port 5173. Deployment origins must be configured on the backend; no proxy or CORS bypass is introduced.
+- `npm run test:live` is an opt-in read-only Playwright check. It validates actual health/project/summary/brief/direction/reference/asset/version/assessment responses using shared schemas and opens completed feature pages through browser CORS without MSW. This passed against the deployed backend on 2026-10-10. Existing assessment detail is checked only when history contains one. No live write or paid provider invocation is performed by this test.
+- Live mutations/provider retry/cancel have not been exercised against the deployed service; their request construction, errors and state transitions remain covered by mock integration tests.
+
 ## Proposed contract changes
 
 - None.
@@ -76,7 +84,7 @@ Contract SHA-256: EA050C8AA413FC56E60E6676336754132624F4CD6A0EB776930718A1CC3150
 
 - Human decisions/overrides, collections and activity feed remain subsequent feature slices.
 - Implemented feature views retain text fallbacks for unknown status/recommendation values.
-- Backend integration has not been exercised; current verification uses MSW.
+- Read-only backend integration is verified by the opt-in live smoke test. Mutations and provider lifecycle still require live verification.
 
 ## Verification
 

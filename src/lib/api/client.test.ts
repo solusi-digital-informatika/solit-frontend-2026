@@ -90,7 +90,7 @@ describe('API foundation', () => {
     expect(() => assertCompatibleContract('invalid')).toThrow('incompatible')
   })
   it('requires an explicit valid mock toggle and safe API URL', () => {
-    expect(readConfig({}).useMockApi).toBe(false)
+    expect(readConfig({})).toEqual({ baseUrl: 'https://api.solit.my.id/api/v1', useMockApi: false })
     expect(readConfig({ VITE_USE_MOCK_API: 'true' }).useMockApi).toBe(true)
     expect(() => readConfig({ VITE_USE_MOCK_API: 'yes' })).toThrow()
     expect(() => readConfig({ VITE_API_BASE_URL: 'https://user:secret@example.com/api/v1' })).toThrow()

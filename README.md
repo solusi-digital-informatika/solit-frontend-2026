@@ -18,11 +18,13 @@ The development page runs at http://localhost:5173.
 ## API configuration
 
 ```dotenv
-VITE_API_BASE_URL=http://localhost:3001/api/v1
-VITE_USE_MOCK_API=true
+VITE_API_BASE_URL=https://api.solit.my.id/api/v1
+VITE_USE_MOCK_API=false
 ```
 
-Mock mode uses MSW to intercept HTTP requests before React starts. The page labels
+The default configuration connects to [the backend API documentation](https://api.solit.my.id/docs) with the `/api/v1` prefix. Open development at `http://localhost:5173`; the deployed backend accepts that origin and rejects `http://127.0.0.1:5173`. Restart Vite after changing `.env`. Production hosting must be allowed by backend CORS as well.
+
+Set `VITE_USE_MOCK_API=true` for offline demo work. Mock mode uses MSW to intercept HTTP requests before React starts. The page labels
 mock mode explicitly. Mock endpoints include GET /health, GET/POST /projects,
 and GET /projects/:id. Solara uses the canonical seed IDs. Creation offers blank
 projects; full demo cloning arrives with the associated domain fixtures.
@@ -57,6 +59,11 @@ npm run build
 npm run test:e2e
 npm run preview
 ```
+
+`npm run test:live` runs an opt-in read-only contract and browser smoke test against the deployed backend, with MSW disabled. It opens the completed feature pages and exact version detail without creating projects, assets, assessments or decisions. Live writes remain subject to backend authorization and provider settings.
+
+On machines with limited resources, run checks sequentially and use
+`npm run test -- --maxWorkers=2` and `npm run test:e2e -- --workers=2`.
 
 Tests cover schema/contract field parity, HTTP mock health, error envelopes,
 idempotency headers, repeated filters, timeout/cancellation, network failure,
