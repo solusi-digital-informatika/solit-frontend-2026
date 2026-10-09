@@ -16,3 +16,7 @@
 .asset-reference-list { list-style:none; padding:0; }.asset-reference-list li { margin:16px 0; }.asset-rights { background:#fff0bd; border-radius:8px; padding:12px; }
 .asset-loading>div { aspect-ratio:8/5; max-width:24rem; background:#e8edf5; border-radius:16px; }
 @media(max-width:650px) { .asset-filters { grid-template-columns:1fr; }.asset-metadata { grid-template-columns:1fr; }.asset-form { padding:16px; }.asset-detail .project-actions { flex-wrap:wrap; } }
+.version-actions { display:flex; flex-wrap:wrap; gap:16px; align-items:end; margin:20px 0; }.version-actions label { flex:1; min-width:min(100%,16rem); }
+.version-comparison,.version-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }.version-inspection { min-width:0; overflow-wrap:anywhere; }.version-inspection .asset-preview { margin:16px 0; }.version-inspection code { word-break:break-all; font-size:13px; }.version-inspection h5 { font-size:20px; }.version-inspection h6 { font-size:17px; margin:24px 0 12px; }
+.version-attribute { display:contents; }.version-setting { padding:16px; border:1px solid var(--border); border-radius:8px; margin:16px 0; }.version-form .asset-checkbox { flex-direction:row; align-items:center; }.version-form .asset-checkbox input { width:20px; min-height:20px; }.version-form input,.version-form textarea { margin-top:8px; }.version-workspace { padding:20px; }
+@media(max-width:800px) { .version-comparison,.version-pair { grid-template-columns:1fr; }.version-workspace { padding:16px; } }

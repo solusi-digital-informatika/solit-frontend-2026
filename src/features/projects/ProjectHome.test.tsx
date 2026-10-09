@@ -1,5 +1,5 @@
 import { beforeAll, afterAll, beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within, waitFor } from '@testing-library/react'
 import { setupServer } from 'msw/node'
 import { http, HttpResponse, delay } from 'msw'
 import { ProjectHome } from './ProjectHome'
@@ -47,7 +47,7 @@ describe('Project Home', () => {
     expect(within(home).getByText('steel blue, graphite, cool white')).toBeInTheDocument()
     expect(within(home).getByText('No assessment has been run yet.')).toBeInTheDocument()
     expect(within(home).getByText('No decisions recorded yet.')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: solaraSummaryFixture.project.name })).toHaveFocus()
+    await waitFor(() => expect(screen.getByRole('heading', { name: solaraSummaryFixture.project.name })).toHaveFocus())
     fireEvent.click(screen.getByRole('link', { name: 'Review active direction' }))
     expect(document.getElementById('active-direction')).toHaveFocus()
   })

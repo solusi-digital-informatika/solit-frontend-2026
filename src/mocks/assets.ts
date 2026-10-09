@@ -1,9 +1,11 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiListSchema, ApiResponseSchema, ApiErrorSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetTypeSchema, AssetStatusSchema, UUIDSchema, ActivityEventSchema, type Project, type AssetDetail } from '../../packages/contracts/src'
+import { ApiListSchema, ApiResponseSchema, ApiErrorSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetVersionInputSchema, AssetTypeSchema, AssetStatusSchema, UUIDSchema, ActivityEventSchema, type Project, type AssetDetail } from '../../packages/contracts/src'
 import { assetTargetFixtures } from './assetFixtures'
-export function createAssetStore(baseUrl: string, findProject: (id: string) => Project | undefined, referenceLinks: (id: string) => AssetDetail['referenceLinks']) {
+import { createVersionStore, type VersionContext, type AssetRecord } from './versions'
+export function createAssetStore(baseUrl: string, findProject: (id: string) => Project | undefined, referenceLinks: (id: string) => AssetDetail['referenceLinks'], context: VersionContext) {
   const records = structuredClone(assetTargetFixtures)
+  const versionStore = createVersionStore(baseUrl, records, findProject, context)
   const events: z.infer<typeof ActivityEventSchema>[] = []
   const intents = new Map<string, { fingerprint: string; result: AssetDetail }>()
   const headers = (request: Request) => ({ 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() })
@@ -21,14 +23,14 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
   }
   const metadata = z.object({ title: z.string().trim().min(1), description: z.string().trim().nullable().optional(), assetType: AssetTypeSchema, tags: z.array(z.string().trim().min(1)).optional(), ownerUserId: UUIDSchema.optional() })
   const handlers = [
+    ...versionStore.handlers,
     http.get(`${baseUrl}/projects/:projectId/assets`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       if (!findProject(String(params.projectId))) return error(request, 404, 'NOT_FOUND', 'Project not found.')
       const query = new URL(request.url).searchParams; const status = query.get('status'); const type = query.get('assetType'); const direction = query.get('directionId'); const owner = query.get('ownerUserId'); const sort = query.get('sort') ?? 'updatedAt:desc'
       if ((status && !AssetStatusSchema.safeParse(status).success) || (type && !AssetTypeSchema.safeParse(type).success) || (direction && !UUIDSchema.safeParse(direction).success) || (owner && !UUIDSchema.safeParse(owner).success) || (query.has('includeArchived') && !['true', 'false'].includes(query.get('includeArchived')!)) || !['updatedAt:desc', 'title:asc', 'status:asc', 'versionCount:desc'].includes(sort)) return error(request, 400, 'VALIDATION_ERROR', 'Invalid asset filters.')
       const q = (query.get('q') ?? '').toLowerCase()
-      // Seed version summaries predate direction changes; all were created under Cold Industrial.
-      const values = records.map(value => value.asset).filter(asset => asset.projectId === params.projectId && (!asset.archivedAt || query.get('includeArchived') === 'true') && (!status || asset.status === status) && (!type || asset.assetType === type) && (!query.get('tag') || asset.tags.includes(query.get('tag')!)) && (!owner || asset.owner?.id === owner) && (!direction || (asset.latestVersion && assetTargetFixtures.some(value => value.asset.id === asset.id) && direction === '00000000-0000-4000-8000-000000000030')) && `${asset.title} ${asset.description ?? ''} ${asset.tags.join(' ')}`.toLowerCase().includes(q)).sort((a, b) => {
+      const values = records.filter(record => !direction || versionStore.directionOfLatest(record) === direction).map(value => value.asset).filter(asset => asset.projectId === params.projectId && (!asset.archivedAt || query.get('includeArchived') === 'true') && (!status || asset.status === status) && (!type || asset.assetType === type) && (!query.get('tag') || asset.tags.includes(query.get('tag')!)) && (!owner || asset.owner?.id === owner) && `${asset.title} ${asset.description ?? ''} ${asset.tags.join(' ')}`.toLowerCase().includes(q)).sort((a, b) => {
         const difference = sort === 'title:asc' ? a.title.localeCompare(b.title) : sort === 'status:asc' ? a.status.localeCompare(b.status) : sort === 'versionCount:desc' ? b.versionCount - a.versionCount : b.updatedAt.localeCompare(a.updatedAt)
         return difference || a.id.localeCompare(b.id)
       })
@@ -39,14 +41,15 @@ export function createAssetStore(baseUrl: string, findProject: (id: string) => P
     http.post(`${baseUrl}/projects/:projectId/assets`, async ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = findProject(String(params.projectId)); if (!project) return error(request, 404, 'NOT_FOUND', 'Project not found.')
-      const parsed = metadata.extend({ initialVersion: z.unknown().optional() }).safeParse(await body(request)); if (!parsed.success) return invalid(request, parsed)
-      if (parsed.data.initialVersion !== undefined) return error(request, 400, 'VALIDATION_ERROR', 'Initial version creation belongs to the next feature. Create asset metadata first.')
+      const parsed = metadata.extend({ initialVersion: AssetVersionInputSchema.optional() }).safeParse(await body(request)); if (!parsed.success) return invalid(request, parsed)
       if (parsed.data.ownerUserId && parsed.data.ownerUserId !== project.owner.id) return error(request, 404, 'NOT_FOUND', 'Owner is not available in this project mock.')
       const key = request.headers.get('Idempotency-Key'); if (key && (key.length < 8 || key.length > 160)) return error(request, 400, 'VALIDATION_ERROR', 'Invalid idempotency key.')
       const fingerprint = JSON.stringify(parsed.data); const scopedKey = `${project.id}:${key}`; const previous = key ? intents.get(scopedKey) : undefined
       if (previous) return previous.fingerprint !== fingerprint ? error(request, 422, 'IDEMPOTENCY_KEY_REUSED', 'This key was used with different asset fields.') : HttpResponse.json(ApiResponseSchema(AssetDetailSchema).parse({ data: previous.result }), { status: 201, headers: { ...headers(request), 'Idempotent-Replayed': 'true' } })
-      const now = new Date().toISOString(); const record = { asset: AssetSchema.parse({ id: crypto.randomUUID(), projectId: project.id, title: parsed.data.title, description: parsed.data.description || null, assetType: parsed.data.assetType, status: 'DRAFT', tags: parsed.data.tags ?? [], owner: parsed.data.ownerUserId ? project.owner : null, versionCount: 0, latestVersion: null, createdBy: project.owner, createdAt: now, updatedAt: now, archivedAt: null }), versions: [] }
-      records.push(record); audit(request, record, 'ASSET_CREATED'); const result = detail(record); if (key) intents.set(scopedKey, { fingerprint, result: structuredClone(result) })
+      const now = new Date().toISOString(); const record: AssetRecord = { asset: AssetSchema.parse({ id: crypto.randomUUID(), projectId: project.id, title: parsed.data.title, description: parsed.data.description || null, assetType: parsed.data.assetType, status: 'DRAFT', tags: parsed.data.tags ?? [], owner: parsed.data.ownerUserId ? project.owner : null, versionCount: 0, latestVersion: null, createdBy: project.owner, createdAt: now, updatedAt: now, archivedAt: null }), versions: [] }
+      if (parsed.data.initialVersion) { const failure = versionStore.validate(request, record, parsed.data.initialVersion); if (failure) return failure }
+      records.push(record); if (parsed.data.initialVersion) versionStore.append(request, record, parsed.data.initialVersion)
+      audit(request, record, 'ASSET_CREATED'); const result = detail(record); if (key) intents.set(scopedKey, { fingerprint, result: structuredClone(result) })
       return HttpResponse.json(ApiResponseSchema(AssetDetailSchema).parse({ data: result }), { status: 201, headers: headers(request) })
     }),
     http.patch(`${baseUrl}/assets/:assetId`, async ({ request, params }) => {

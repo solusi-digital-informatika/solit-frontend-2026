@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, type Project } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
 import { summaryForProject } from './projectSummary'
-import { createBriefHandlers } from './briefs'
+import { createBriefStore } from './briefs'
 import { createDirectionStore } from './directions'
 import { createReferenceStore } from './references'
 import { createAssetStore } from './assets'
@@ -13,7 +13,8 @@ export function createProjectHandlers(baseUrl: string) {
   const projects: Project[] = [structuredClone(solaraProjectFixture)]
   const intents = new Map<string, { body: string; project: Project }>()
   const directionStore = createDirectionStore(baseUrl, id => projects.find(project => project.id === id))
-  const assetStore = createAssetStore(baseUrl, id => projects.find(project => project.id === id), id => referenceStore.linksToAsset(id))
+  const briefStore = createBriefStore(baseUrl, id => projects.find(project => project.id === id))
+  const assetStore = createAssetStore(baseUrl, id => projects.find(project => project.id === id), id => referenceStore.linksToAsset(id), { directionProject: id => directionStore.revisionProject(id), directionFor: id => directionStore.revisionDirection(id), briefProject: id => briefStore.projectFor(id), latestBrief: id => briefStore.latestId(id), referenceProject: id => referenceStore.projectFor(id) })
   const referenceStore = createReferenceStore(baseUrl, id => projects.find(project => project.id === id), id => directionStore.revisionProject(id), (type, id) => assetStore.projectFor(type, id))
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND' | 'IDEMPOTENCY_KEY_REUSED', message: string, details: { path: string; message: string }[] = []) {
     const requestId = request.headers.get('X-Request-Id') ?? crypto.randomUUID()
@@ -24,7 +25,7 @@ export function createProjectHandlers(baseUrl: string) {
     ...assetStore.handlers,
     ...referenceStore.handlers,
     ...directionStore.handlers,
-    ...createBriefHandlers(baseUrl, id => projects.find(project => project.id === id)),
+    ...briefStore.handlers,
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)

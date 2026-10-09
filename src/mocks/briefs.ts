@@ -12,7 +12,7 @@ export const solaraBriefFixture = BriefRevisionSchema.parse({
 })
 const requestAttribute = AttributeRequirementSchema.extend({ id: UUIDSchema.optional() })
 const requestSchema = BriefRevisionInputSchema.partial().extend({ title: z.string().trim().min(1), objective: z.string().trim().min(1), requirements: z.array(requestAttribute).optional(), forbiddenAttributes: z.array(requestAttribute).optional() })
-export function createBriefHandlers(baseUrl: string, findProject: (id: string) => Project | undefined) {
+export function createBriefStore(baseUrl: string, findProject: (id: string) => Project | undefined) {
   const revisions: BriefRevision[] = [structuredClone(solaraBriefFixture)]
   function headers(request: Request) { return { 'X-Request-Id': request.headers.get('X-Request-Id') ?? crypto.randomUUID() } }
   function error(request: Request, status: number, code: 'VALIDATION_ERROR' | 'NOT_FOUND', message: string, details: { path: string; message: string }[] = []) {
@@ -25,7 +25,7 @@ export function createBriefHandlers(baseUrl: string, findProject: (id: string) =
     if (!findProject(id.data)) return error(request, 404, 'NOT_FOUND', 'Project not found.')
     return null
   }
-  return [
+  const handlers = [
     http.get(`${baseUrl}/projects/:projectId/brief-revisions/latest`, ({ request, params }) => {
       const failure = checkProject(request, params.projectId)
       if (failure) return failure
@@ -66,4 +66,5 @@ export function createBriefHandlers(baseUrl: string, findProject: (id: string) =
       return HttpResponse.json(ApiResponseSchema(BriefRevisionSchema).parse({ data: revision }), { status: 201, headers: headers(request) })
     }),
   ]
+  return { handlers, projectFor: (id: string) => revisions.find(value => value.id === id)?.projectId, latestId: (projectId: string) => revisions.find(value => value.projectId === projectId)?.id ?? null }
 }

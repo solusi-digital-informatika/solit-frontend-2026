@@ -102,10 +102,18 @@ the asset grid, inspect detail and newest-first version summaries, create logica
 asset records, edit metadata and logical statuses, and archive/restore without
 altering existing versions. Asset creation uses an idempotency key. Linked
 reference notes and rights are read from the API; Project Home counts reflect
-mock asset mutations. Full version content, lineage, creation, file handling and
-approval decisions are scheduled for the next feature. Local demo images are
+mock asset mutations. Storage uploads and version approval decisions are
+scheduled for subsequent features. Local demo images are
 procedurally drawn placeholders. Browser tests cover these workflows at desktop
 and phone widths.
+
+Asset version inspection and comparison are now available within asset detail.
+Inspect exact IDs, prompts/settings, recorded attributes, file metadata, lineage,
+reference notes and collection pins. Create a derived or independent version
+using a file URL or explicit metadata-only mode. The form preserves drafts on
+failure and reuses an unchanged creation intent key. Old approval states and pins
+remain attached to the old version; newest-first history includes the appended
+version. Uploads, AI generation and version review decisions remain deferred.
 
 Requirements: branchframe_prd_trd_erd.md. Frontend guidance: SOUL.md.
 Wire contract: INTEGRATION_CONTRACT.md. Assumptions and gaps:

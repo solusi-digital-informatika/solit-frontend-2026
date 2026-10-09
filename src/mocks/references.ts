@@ -89,5 +89,5 @@ export function createReferenceStore(baseUrl: string, findProject: (id: string) 
       reference.links = reference.links.filter(value => value.targetType !== targetType.data || value.targetId !== targetId.data); touch(reference); audit(request, reference, 'REFERENCE_UPDATED', 'Removed a reference link.'); return response(request, reference)
     }),
   ]
-  return { handlers, linksToAsset(id: string) { return references.flatMap(reference => reference.links.filter(link => link.targetType === 'ASSET' && link.targetId === id).map(link => ({ referenceId: reference.id, relationshipType: link.relationshipType ?? 'INSPIRATION', note: link.usageNote }))) } }
+  return { handlers, projectFor: (id: string) => references.find(value => value.id === id)?.projectId, linksToAsset(id: string) { return references.flatMap(reference => reference.links.filter(link => link.targetType === 'ASSET' && link.targetId === id).map(link => ({ referenceId: reference.id, relationshipType: link.relationshipType ?? 'INSPIRATION', note: link.usageNote }))) } }
 }
