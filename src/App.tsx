@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ApiClientError, assertCompatibleContract, type ApiClient } from './lib/api/client'
 import { copy } from './copy/en'
 import './App.css'
@@ -29,7 +29,7 @@ function App({ client, isMockApi }: { client: ApiClient; isMockApi: boolean }) {
   return (
     <div className="app-shell">
       <a className="skip-link" href="#workspace-content" onClick={event => { event.preventDefault(); document.getElementById('workspace-content')?.focus() }}>Skip to workspace</a>
-      <header className="app-topbar"><a className="app-brand" href="#/projects" aria-label="Branchframe workspace"><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span><span><h1>{copy.brand}</h1><span className="brand-subtitle">Creative workspace</span></span></a><div className="topbar-message">Ideas evolve. Good work stays.</div><div className="topbar-status"><span className={`mode ${isMockApi ? 'demo-mode' : ''}`}><span className="mode-dot" aria-hidden="true" />{isMockApi ? copy.mock : copy.live}</span>{connection.kind === 'ready' && <details className="connection-details"><summary aria-label="Connection details"><span className="connection-dot" aria-hidden="true" /> Connected</summary><section aria-label="API connection" className="connection"><p>{copy.connected}</p><p>Contract v{connection.contractVersion}</p></section></details>}</div></header>
+      <header className="app-topbar"><a className="app-brand" href="#/projects" aria-label="Branchframe workspace"><span className="brand-mark" aria-hidden="true"><i /><i /><i /><i /></span><span><h1>{copy.brand}</h1><span className="brand-subtitle">Creative workspace</span></span></a><div className="topbar-message">Ideas evolve. Good work stays.</div></header>
       <main className="welcome" id="workspace-content" tabIndex={-1}>
       {offline && !isMockApi && <p role="status" className="offline-notice">{copy.offline}</p>}
       {connection.kind === 'loading' && <div className="boot-state"><span className="loading-orbit" aria-hidden="true" /><p role="status">{copy.loading}</p></div>}

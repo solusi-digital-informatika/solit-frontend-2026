@@ -71,7 +71,7 @@ export function BriefPage({ client, projectId }: { client: ApiClient; projectId:
   }
   const canEdit = project !== null && ['OWNER', 'REVIEWER', 'EDITOR'].includes(project.currentUserRole)
   return <section className="brief-page" aria-label={c.heading}>
-    <a href={`#/projects/${projectId}`}>← {c.back}</a><h2 ref={heading} tabIndex={-1}>{c.heading}{project && <span className="note"> · {project.name}</span>}</h2>
+    <h2 ref={heading} tabIndex={-1}>{c.heading}{project && <span className="note"> · {project.name}</span>}</h2>
     {loading && <p role="status">{c.loading}</p>}
     {error && <div role="alert" className="project-error"><p>{error.message}</p>{error.requestId && <p>{c.requestId}: <code>{error.requestId}</code></p>}<button type="button" onClick={() => { setError(null); setLoading(true); setAttempt(value => value + 1) }}>{c.retry}</button></div>}
     {notice && <p role="status">{notice}</p>}
@@ -81,7 +81,7 @@ export function BriefPage({ client, projectId }: { client: ApiClient; projectId:
       {editing ? <BriefForm latest={latest} save={save} cancel={() => { setEditing(false); createButton.current?.focus() }} /> : <>
         <p className="note">{c.immutable}</p>
         {!latest && <p>{c.empty}</p>}
-        <div className="brief-layout"><section className="brief-history" aria-label={c.history}><h3>{c.history}</h3><ol>{history.map(revision => <li key={revision.id}><button type="button" aria-current={selected?.id === revision.id ? 'true' : undefined} onClick={() => void select(revision.id)}>{c.revision} {revision.revisionNumber}{revision.id === latest?.id ? ` · ${c.latest}` : ''}</button><p className="note">{revision.changeSummary ?? revision.title}</p></li>)}</ol>{cursor && <button disabled={moreLoading} type="button" onClick={() => void loadMore()}>{moreLoading ? c.loading : c.loadMore}</button>}</section>
+        <div className="brief-layout">{history.length > 0 && <section className="brief-history" aria-label={c.history}><h3>{c.history}</h3><ol>{history.map(revision => <li key={revision.id}><button type="button" aria-current={selected?.id === revision.id ? 'true' : undefined} onClick={() => void select(revision.id)}>{c.revision} {revision.revisionNumber}{revision.id === latest?.id ? ` · ${c.latest}` : ''}</button><p className="note">{revision.changeSummary ?? revision.title}</p></li>)}</ol>{cursor && <button disabled={moreLoading} type="button" onClick={() => void loadMore()}>{moreLoading ? c.loading : c.loadMore}</button>}</section>}
         {selectionLoading ? <p role="status">{c.loadingRevision}</p> : selected && <BriefDetail revision={selected} latestId={latest?.id ?? null} />}</div>
       </>}
     </>}

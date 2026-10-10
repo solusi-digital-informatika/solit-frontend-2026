@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ApiListSchema, ApiResponseSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetVersionSchema, AssetStatusSchema, DecisionSchema, type AssetType, type AssetVersionInput } from '../../../packages/contracts/src'
+import { ApiListSchema, ApiResponseSchema, AssetSchema, AssetDetailSchema, AssetVersionSummarySchema, AssetVersionSchema, AssetStatusSchema, DecisionSchema, StorageObjectSchema, type AssetType, type AssetVersionInput } from '../../../packages/contracts/src'
 import type { ApiClient } from '../../lib/api/client'
 export const VersionSummaryViewSchema = AssetVersionSummarySchema.extend({ status: z.string() })
 export const AssetViewSchema = AssetSchema.extend({ assetType: z.string(), status: z.string(), latestVersion: VersionSummaryViewSchema.nullable() })
@@ -22,5 +22,10 @@ export function assetApi(client: ApiClient) {
     version: (id: string, signal?: AbortSignal) => client.request(`/asset-versions/${id}`, ApiResponseSchema(VersionViewSchema), { signal }),
     createVersion: (id: string, body: AssetVersionInput, key: string) => client.request(`/assets/${id}/versions`, ApiResponseSchema(VersionViewSchema), { method: 'POST', body, idempotencyKey: key }),
     versions: async (id: string, signal?: AbortSignal) => { const values: z.infer<typeof VersionSummaryViewSchema>[] = []; let cursor: string | undefined; do { const result = await client.request(`/assets/${id}/versions`, ApiListSchema(VersionSummaryViewSchema), { signal, query: { cursor } }); values.push(...result.data); cursor = result.page.nextCursor ?? undefined } while (cursor); return values },
+    upload: (projectId: string, file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return client.request(`/projects/${projectId}/uploads`, ApiResponseSchema(StorageObjectSchema), { method: 'POST', body: form })
+    },
   }
 }

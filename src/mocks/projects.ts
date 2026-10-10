@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { z } from 'zod'
-import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, ActivityEventSchema, type ActivityEvent, type Project } from '../../packages/contracts/src'
+import { ApiErrorSchema, ApiListSchema, ApiResponseSchema, ProjectSchema, ProjectSummarySchema, UUIDSchema, ActivityEventSchema, StorageObjectSchema, type ActivityEvent, type Project } from '../../packages/contracts/src'
 import { solaraProjectFixture } from './fixtures'
 import { summaryForProject } from './projectSummary'
 import { createBriefStore } from './briefs'
@@ -38,6 +38,23 @@ export function createProjectHandlers(baseUrl: string) {
     ...collectionStore.handlers,
     ...activityExportHandlers(baseUrl, id => projects.find(value => value.id === id), () => [...projectEvents, ...briefStore.events, ...directionStore.activity, ...referenceStore.events, ...assetStore.events, ...assetStore.versionEvents, ...assessmentStore.events, ...collectionStore.events], id => ({ project: projects.find(value => value.id === id)!, briefRevisions: briefStore.snapshot(id), directions: directionStore.snapshot(id), references: referenceStore.snapshot(id), assets: assetStore.snapshot(id), assessments: assessmentStore.snapshot(id), decisions: [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions].filter(value => value.projectId === id), collections: collectionStore.snapshot(id) }), projectEvents),
     decisionHistoryHandler(baseUrl, id => projects.some(project => project.id === id), () => [...assessmentStore.decisions, ...directionStore.decisions, ...collectionStore.decisions], assessmentStore.itemAssessment),
+    http.post(`${baseUrl}/projects/:projectId/uploads`, ({ request }) => {
+      const fileId = crypto.randomUUID()
+      return HttpResponse.json(ApiResponseSchema(StorageObjectSchema).parse({
+        data: {
+          id: fileId,
+          originalFilename: 'sample-upload.png',
+          mimeType: 'image/png',
+          byteSize: 1024,
+          width: 800,
+          height: 600,
+          checksum: null,
+          url: `/demo-assets/mock-upload-${fileId.slice(0, 8)}.png`,
+          urlExpiresAt: null,
+          createdAt: new Date().toISOString(),
+        }
+      }), { status: 201, headers: headers(request) })
+    }),
     http.get(`${baseUrl}/projects/:projectId/summary`, ({ request, params }) => {
       if (!UUIDSchema.safeParse(params.projectId).success) return error(request, 400, 'VALIDATION_ERROR', 'Invalid project identifier.')
       const project = projects.find(value => value.id === params.projectId)

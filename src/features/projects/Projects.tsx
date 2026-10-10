@@ -1,4 +1,4 @@
-﻿import { CollectionsPage } from '../collections/CollectionsPage'
+import { CollectionsPage } from '../collections/CollectionsPage'
 import { ActivityPage } from '../activity/ActivityPage'
 import { WorkspaceSidebar } from '../../components/WorkspaceSidebar'
 import { Icon } from '../../components/Icon'
@@ -111,7 +111,7 @@ export function Projects({ client, isMockApi }: { client: ApiClient; isMockApi: 
       {loading ? <p role="status">{c.loading}</p> : <>
         {error && <ErrorMessage error={error} retry={() => loadingMore ? undefined : setAttempt(value => value + 1)} />}
         {!error && items.length === 0 && <p role="status">{q || status === 'ARCHIVED' ? c.noResults : c.empty}</p>}
-        <ul className="project-grid">{items.map(project => <li key={project.id} className="project-card"><div className="project-art" aria-hidden="true"><span /><span /><span /></div><ProjectStatus status={project.status} /><h3><a href={`#/projects/${project.id}`}>{project.name}</a></h3><p>{project.description ?? c.noDescription}</p><p className="note">{c.owner}: {project.owner.displayName}</p><a href={`#/projects/${project.id}`}>{c.open} â†’</a></li>)}</ul>
+        <ul className="project-grid">{items.map(project => <li key={project.id} className="project-card"><div className="project-art" aria-hidden="true"><span /><span /><span /></div><ProjectStatus status={project.status} /><h3><a href={`#/projects/${project.id}`}>{project.name}</a></h3><p>{project.description ?? c.noDescription}</p><p className="note">{c.owner}: {project.owner.displayName}</p><a href={`#/projects/${project.id}`}>{c.open} &rarr;</a></li>)}</ul>
         {cursor && <button type="button" disabled={loadingMore} onClick={() => void more()}>{loadingMore ? c.loading : c.loadMore}</button>}
       </>}
     </>}
